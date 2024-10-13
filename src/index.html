@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +11,6 @@
       /* Set the background color to a dark color */
       color: #ffffff;
     }
-
     #container {
       width: 80%;
       margin: auto;
@@ -20,7 +18,6 @@
       background-color: #1e1e1e;
       border-radius: 8px;
     }
-
     #url {
       width: 100%;
       padding: 10px;
@@ -30,9 +27,11 @@
       border: 1px solid #444444;
       border-radius: 4px;
     }
-
     #fetchButton,
-    #addButton {
+    #addButton,
+    #saveUrlButton,
+    #deleteUrlButton,
+    #viewUrlButton {
       padding: 10px 20px;
       margin: 5px;
       background-color: #333333;
@@ -41,13 +40,15 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     #fetchButton:hover,
-    #addButton:hover {
+    #addButton:hover,
+    #saveUrlButton:hover,
+    #deleteUrlButton:hover,
+    #viewUrlButton:hover {
       background-color: #444444;
     }
-
-    #packageList {
+    #packageList,
+    #storedUrlsList {
       width: 100%;
       height: 300px;
       background-color: #333333;
@@ -57,27 +58,30 @@
       overflow-y: auto;
       padding: 10px;
     }
-
-    #packageList li {
+    #packageList li,
+    #storedUrlsList li {
       padding: 5px;
       cursor: pointer;
     }
-
-    #packageList li.selected {
+    #packageList li.selected,
+    #storedUrlsList li.selected {
       background-color: #555555;
     }
   </style>
 </head>
-
 <body>
   <div id="container">
     <h1>VCC Listing Manager - 0.0.5</h1>
     <input type="text" id="url" placeholder="Enter VCC Listing URL">
     <button id="fetchButton">Fetch Listing</button>
+    <button id="saveUrlButton">Save URL</button>
     <ul id="packageList"></ul>
     <button id="addButton">Add Package</button>
+    <h2>Stored URLs</h2>
+    <ul id="storedUrlsList"></ul>
+    <button id="deleteUrlButton">Delete Selected URL</button>
+    <button id="viewUrlButton">View Selected URL</button>
   </div>
   <script src="renderer.js"></script>
 </body>
-
 </html>

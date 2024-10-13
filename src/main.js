@@ -1,5 +1,21 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const storage = require('node-persist');
+
+// Initialize node-persist with a custom storage directory
+async function initializeStorage() {
+  try {
+    await storage.init({
+      dir: path.join(app.getPath('userData'), 'user-data')
+    });
+    console.log('Storage initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize storage:', error);
+    app.quit();
+  }
+}
+
+initializeStorage();
 
 if (process.env.NODE_ENV === 'development') {
     require('electron-reload')(__dirname, {
@@ -61,6 +77,40 @@ if (!gotTheLock) {
         } else if (arg.startsWith('vcc://')) {
             deeplinkingUrl = extractDataUrl(arg);
             console.log(`Parsed deeplinking URL from command-line: ${deeplinkingUrl}`);
+        }
+    });
+
+    // Handle storing and retrieving URLs
+    ipcMain.on('save-url', async (event, url) => {
+        try {
+            let urls = await storage.getItem('urls') || [];
+            if (!urls.includes(url)) {
+                urls.push(url);
+                await storage.setItem('urls', urls);
+            }
+            event.reply('url-saved', urls);
+        } catch (error) {
+            console.error('Failed to save URL:', error);
+        }
+    });
+
+    ipcMain.on('get-urls', async (event) => {
+        try {
+            const urls = await storage.getItem('urls') || [];
+            event.reply('urls', urls);
+        } catch (error) {
+            console.error('Failed to get URLs:', error);
+        }
+    });
+
+    ipcMain.on('delete-url', async (event, url) => {
+        try {
+            let urls = await storage.getItem('urls') || [];
+            urls = urls.filter(storedUrl => storedUrl !== url);
+            await storage.setItem('urls', urls);
+            event.reply('url-saved', urls);
+        } catch (error) {
+            console.error('Failed to delete URL:', error);
         }
     });
 }
