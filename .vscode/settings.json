@@ -1,0 +1,11 @@
+{
+    "cSpell.words": [
+        "deeplinking"
+    ],
+    // set tab size to 2 spaces
+    "editor.tabSize": 2,
+    // set use spaces for indentation
+    "editor.insertSpaces": true,
+
+    "editor.rulers": [120],
+}
