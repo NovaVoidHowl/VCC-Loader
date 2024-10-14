@@ -53,6 +53,7 @@ ipcRenderer.on('urls', (event, urls) => {
 ipcRenderer.on('project-saved', (event, projects) => {
   displayStoredProjects(projects);
   populateProjectDropdown(projects); // Refresh the dropdown with the updated projects list
+  clearProjectInfo(); // Clear the project info section
 });
 
 ipcRenderer.on('projects', (event, projects) => {
@@ -167,11 +168,21 @@ function displayStoredProjects(projects) {
     li.querySelector('.remove-button').addEventListener('click', () => {
       if (confirm('Are you sure you want to remove this project?')) {
         ipcRenderer.send('delete-project', project.path);
+        clearProjectInfo(); // Clear the project info section
       }
     });
     storedProjectsList.appendChild(li);
   }
   populateProjectDropdown(projects); // Refresh the dropdown with the updated projects list
+}
+
+// Function to clear the project info section
+function clearProjectInfo() {
+  projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
+  projectInfo.classList.add('center-text');
+  projectNameElement.textContent = '';
+  unityVersionElement.textContent = '';
+  installedPackagesList.innerHTML = '';
 }
 
 // Function to populate the project dropdown
