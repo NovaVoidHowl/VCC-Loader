@@ -62,16 +62,23 @@ async function displayStoredUrls(urls) {
       li.classList.add('listing-box');
       li.innerHTML = `
         <div class="info">
-          <h3>${data.name} <span class="latest-version">(Latest version ${latestVersion})</span></h3>
+          <h3>${data.name || 'Invalid / Corrupt listing'} <span class="latest-version">${latestVersion ? `(Latest version ${latestVersion})` : ''}</span></h3>
           <p>${url}</p>
         </div>
-        <select class="version-dropdown">
-          ${versions.map(version => `<option value="${version}">${version}</option>`).join('')}
-        </select>
+        ${versions.length ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
       `;
       storedUrlsList.appendChild(li);
     } catch (error) {
       console.error('Failed to fetch or parse listing:', error);
+      const li = document.createElement('li');
+      li.classList.add('listing-box');
+      li.innerHTML = `
+        <div class="info">
+          <h3>Invalid / Corrupt listing</h3>
+          <p>${url}</p>
+        </div>
+      `;
+      storedUrlsList.appendChild(li);
     }
   }
 }
