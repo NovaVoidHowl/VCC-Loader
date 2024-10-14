@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const semver = require('semver');
 
 const urlInput = document.getElementById('url');
 const saveUrlButton = document.getElementById('saveUrlButton');
@@ -56,8 +57,8 @@ async function displayStoredUrls(urls) {
       const response = await fetch(url);
       const data = await response.json();
       const packageInfo = data.packages?.[Object.keys(data.packages)[0]];
-      const latestVersion = Object.keys(packageInfo?.versions || {}).sort().pop();
-      const versions = Object.keys(packageInfo?.versions || {});
+      const versions = Object.keys(packageInfo?.versions || {}).sort(semver.rcompare);
+      const latestVersion = versions[0]; // The first element is the latest version after sorting
       const li = document.createElement('li');
       li.classList.add('listing-box');
       li.innerHTML = `
