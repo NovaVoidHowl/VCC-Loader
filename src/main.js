@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const storage = require('node-persist');
 
 // Initialize node-persist with a custom storage directory
@@ -113,6 +114,20 @@ if (!gotTheLock) {
             console.error('Failed to delete URL:', error);
         }
     });
+
+    // Handle version number requests
+    ipcMain.on('request-version', (event) => {
+        const packageJsonPath = path.join(__dirname, '..', 'package.json');
+        fs.readFile(packageJsonPath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('Failed to read package.json:', err);
+                return;
+            }
+            const packageJson = JSON.parse(data);
+            const appVersion = packageJson.version;
+            event.reply('app-version', appVersion);
+        });
+    });
 }
 
 function createWindow() {
@@ -135,6 +150,18 @@ function createWindow() {
         if (deeplinkingUrl) {
             mainWindow.webContents.send('deeplinking-url', deeplinkingUrl);
         }
+
+        // Read the version number from package.json and send it to the renderer process
+        const packageJsonPath = path.join(__dirname, '..', 'package.json');
+        fs.readFile(packageJsonPath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('Failed to read package.json:', err);
+                return;
+            }
+            const packageJson = JSON.parse(data);
+            const appVersion = packageJson.version;
+            mainWindow.webContents.send('app-version', appVersion);
+        });
     });
 
     mainWindow.on('closed', () => {

@@ -9,7 +9,7 @@
     "lint": "eslint src",
     "clean": "rimraf dist",
     "start": "electron .",
-    "start-vcc-test": "electron . vcc://vpm/addRepo?url=https://Adjerry91.github.io/VRCFaceTracking-Templates/index.json",
+    "start-vcc-test": "electron . vcc://vpm/addRepo?url=https://Adjerry91.github.io/VRCFaceTracking-Templates/index2.json",
     "dist": "electron-builder"
   },
   "repository": {
