@@ -137,18 +137,19 @@ async function displayStoredUrls(urls) {
 
 function displayStoredProjects(projects) {
   storedProjectsList.innerHTML = '';
-  for (const projectPath of projects) {
+  for (const project of projects) {
     const li = document.createElement('li');
     li.classList.add('listing-box');
     li.innerHTML = `
       <button class="remove-button">X</button>
       <div class="info">
-        <h3>${projectPath}</h3>
+        <h3>${project.path}</h3>
+        <p>Unity Version: ${project.version}</p>
       </div>
     `;
     li.querySelector('.remove-button').addEventListener('click', () => {
       if (confirm('Are you sure you want to remove this project?')) {
-        ipcRenderer.send('delete-project', projectPath);
+        ipcRenderer.send('delete-project', project.path);
       }
     });
     storedProjectsList.appendChild(li);

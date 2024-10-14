@@ -130,11 +130,11 @@ if (!gotTheLock) {
   });
 
   // Handle storing and retrieving Unity projects
-  ipcMain.on('save-project', async (event, projectPath) => {
+  ipcMain.on('save-project', async (event, project) => {
     try {
       let projects = await storage.getItem('projects') || [];
-      if (!projects.includes(projectPath)) {
-        projects.push(projectPath);
+      if (!projects.some(p => p.path === project.path)) {
+        projects.push(project);
         await storage.setItem('projects', projects);
       }
       event.reply('project-saved', projects);
@@ -155,7 +155,7 @@ if (!gotTheLock) {
   ipcMain.on('delete-project', async (event, projectPath) => {
     try {
       let projects = await storage.getItem('projects') || [];
-      projects = projects.filter(storedProject => storedProject !== projectPath);
+      projects = projects.filter(storedProject => storedProject.path !== projectPath);
       await storage.setItem('projects', projects);
       event.reply('project-saved', projects);
     } catch (error) {
@@ -173,8 +173,18 @@ if (!gotTheLock) {
       const isValidUnityProject = fs.existsSync(path.join(projectPath, 'ProjectSettings')) && fs.existsSync(path.join(projectPath, 'Assets'));
       
       if (isValidUnityProject) {
-        event.reply('project-saved', [projectPath]);
-        ipcMain.emit('save-project', event, projectPath);
+        const projectVersionPath = path.join(projectPath, 'ProjectSettings', 'ProjectVersion.txt');
+        let unityVersion = 'Unknown';
+        if (fs.existsSync(projectVersionPath)) {
+          const versionContent = fs.readFileSync(projectVersionPath, 'utf8');
+          const versionMatch = versionContent.match(/m_EditorVersion: (.+)/);
+          if (versionMatch) {
+            unityVersion = versionMatch[1];
+          }
+        }
+        const project = { path: projectPath, version: unityVersion };
+        event.reply('project-saved', [project]);
+        ipcMain.emit('save-project', event, project);
       } else {
         dialog.showErrorBox('Invalid Unity Project', 'The selected folder does not appear to be a valid Unity project.');
       }
