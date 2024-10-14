@@ -1,52 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VCC Listing Manager</title>
   <style>
+    :root {
+      --common-width: 96%;
+      --common-margin-left: 1%;
+      --common-margin-right: 1%;
+      --common-position: relative;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background-color: #121212;
       color: #ffffff;
+      margin: 0;
+      /* Remove default margin */
+      overflow-x: hidden;
+      /* Prevent horizontal overflow */
     }
+
     #container {
-      left: 0;
-      right: 0;
-      margin-top: 1.2em;
+      width: 100%;
+      margin-top: 1.6em;
       position: absolute;
+      box-sizing: border-box;
+      /* Include padding and border in width */
     }
+
+    #container-top,
+    #container-main,
+    .tabs {
+      width: var(--common-width);
+      margin-left: var(--common-margin-left);
+      margin-right: var(--common-margin-right);
+      position: var(--common-position);
+    }
+
     #container-top {
-      width: 96%;
-      margin-left: 1%;
-      margin-right: 1%;
       padding-left: .5em;
       padding-right: .5em;
       padding-bottom: .1em;
       padding-top: .55em;
       background-color: #1e1e1e;
       border-radius: 8px;
-      position: relative;
     }
+
     #container-main {
-      width: 96%;
-      margin-left: 1%;
-      margin-right: 1%;
-      margin-top: 1em;
-      padding-top: .5em;
+      margin-top: 0;
+      padding-top: .3em;
       padding-left: .3em;
       padding-right: .3em;
       padding-bottom: .1em;
       background-color: #1e1e1e;
-      border-radius: 8px;
-      position: relative;
+      border-radius: 0 0 8px 8px;
     }
+
     .input-group {
       position: relative;
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
+
     #url {
       flex: 1;
       padding: 10px;
@@ -56,7 +79,9 @@
       border-radius: 4px;
       margin-right: 10px;
     }
-    #saveUrlButton {
+
+    #saveUrlButton,
+    #addProjectButton {
       padding: 10px 20px;
       background-color: #333333;
       color: #ffffff;
@@ -64,11 +89,15 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    #saveUrlButton:hover {
+
+    #saveUrlButton:hover,
+    #addProjectButton:hover {
       background-color: #444444;
     }
-    #storedUrlsList {
-      width: 96%;
+
+    #storedUrlsList,
+    #storedProjectsList {
+      width: var(--common-width);
       margin-left: auto;
       margin-right: auto;
       height: 300px;
@@ -80,16 +109,21 @@
       padding: 10px;
       position: relative;
     }
-    #storedUrlsList li {
+
+    #storedUrlsList li,
+    #storedProjectsList li {
       padding: 5px;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    #storedUrlsList li.selected {
+
+    #storedUrlsList li.selected,
+    #storedProjectsList li.selected {
       background-color: #555555;
     }
+
     .listing-box {
       border: 1px solid #444444;
       padding: 10px;
@@ -99,22 +133,27 @@
       justify-content: space-between;
       align-items: center;
     }
+
     .listing-box .info {
       display: flex;
       flex-direction: column;
       flex: 1;
     }
+
     .listing-box h3 {
       margin: 0;
       font-size: 1.2em;
     }
+
     .listing-box p {
       margin: 5px 0;
     }
+
     .listing-box .latest-version {
       font-size: 0.8em;
       color: #aaaaaa;
     }
+
     .version-dropdown {
       background-color: #333333;
       color: #ffffff;
@@ -122,6 +161,7 @@
       border-radius: 4px;
       padding: 5px;
     }
+
     .remove-button {
       background-color: #ff4444;
       color: #ffffff;
@@ -131,9 +171,11 @@
       cursor: pointer;
       margin-right: 10px;
     }
+
     .remove-button:hover {
       background-color: #ff6666;
     }
+
     #app-version-bubble {
       position: absolute;
       top: 0em;
@@ -144,8 +186,47 @@
       border-radius: 0 0 0 .4em;
       font-size: 0.6em;
     }
+
+    .tabs {
+      display: flex;
+      padding-left: .5em;
+      padding-right: .5em;
+      margin-top: 1em;
+      padding-top: .5em;
+      padding-bottom: .5em;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 0;
+      /* Remove bottom margin */
+      background-color: #1e1e1e;
+    }
+
+    .tab {
+      flex: 1;
+      /* Distribute space equally */
+      padding: 10px 20px;
+      background-color: #333333;
+      color: #ffffff;
+      border: 1px solid #444444;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      text-align: center;
+      /* Center text */
+    }
+
+    .tab.active {
+      background-color: #444444;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
+
 <body>
   <div id="app-version-bubble">Version: <span id="app-version"></span></div>
   <div id="container">
@@ -155,10 +236,23 @@
         <button id="saveUrlButton">Save Listing</button>
       </div>
     </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="vcc-listings">VCC Listings</div>
+      <div class="tab" data-tab="unity-projects">Unity Projects</div>
+    </div>
     <div id="container-main">
-      <ul id="storedUrlsList"></ul>
+      <div id="vcc-listings" class="tab-content active">
+        <ul id="storedUrlsList"></ul>
+      </div>
+      <div id="unity-projects" class="tab-content">
+        <div class="input-group">
+          <button id="addProjectButton">Add Project</button>
+        </div>
+        <ul id="storedProjectsList"></ul>
+      </div>
     </div>
   </div>
-<script src="renderer.js"></script>
+  <script src="renderer.js"></script>
 </body>
+
 </html>
