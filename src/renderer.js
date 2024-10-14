@@ -209,7 +209,13 @@ projectDropdown.addEventListener('change', (event) => {
         <p>Unity Version: <span id="unity-version">${selectedProject.version}</span></p>
         <h4>Installed Packages:</h4>
         <ul id="installed-packages">
-          ${selectedProject.packages ? selectedProject.packages.filter(pkg => !pkg.isDefault).map(pkg => `<li>${pkg.name} (${pkg.version})</li>`).join('') : '<li>No packages installed</li>'}
+          ${selectedProject.packages ? selectedProject.packages.filter(pkg => !pkg.isDefault).map(pkg => `
+            <li class="listing-box">
+              <div class="info">
+                <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
+              </div>
+            </li>
+          `).join('') : '<li>No packages installed</li>'}
         </ul>
       `;
       projectInfo.classList.remove('center-text');
