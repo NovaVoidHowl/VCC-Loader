@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,20 +20,15 @@
       font-family: Arial, sans-serif;
       background-color: #121212;
       color: #ffffff;
-      margin: 0;
-      /* Remove default margin */
-      overflow-x: hidden;
-      /* Prevent horizontal overflow */
+      margin: 0; /* Remove default margin */
+      overflow-x: hidden; /* Prevent horizontal overflow */
     }
-
     #container {
       width: 100%;
       margin-top: 1.6em;
       position: absolute;
-      box-sizing: border-box;
-      /* Include padding and border in width */
+      box-sizing: border-box; /* Include padding and border in width */
     }
-
     #container-top,
     #container-main,
     .tabs {
@@ -43,7 +37,6 @@
       margin-right: var(--common-margin-right);
       position: var(--common-position);
     }
-
     #container-top {
       padding-left: .5em;
       padding-right: .5em;
@@ -52,7 +45,6 @@
       background-color: #1e1e1e;
       border-radius: 8px;
     }
-
     #container-main {
       margin-top: 0;
       padding-top: .3em;
@@ -62,15 +54,13 @@
       background-color: #1e1e1e;
       border-radius: 0 0 8px 8px;
     }
-
     .input-group {
       position: relative;
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
-
-    #url {
+    #url, #projectPath, #projectDropdown {
       flex: 1;
       padding: 10px;
       background-color: #333333;
@@ -79,9 +69,7 @@
       border-radius: 4px;
       margin-right: 10px;
     }
-
-    #saveUrlButton,
-    #addProjectButton {
+    #saveUrlButton, #addProjectButton {
       padding: 10px 20px;
       background-color: #333333;
       color: #ffffff;
@@ -89,14 +77,10 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
-    #saveUrlButton:hover,
-    #addProjectButton:hover {
+    #saveUrlButton:hover, #addProjectButton:hover {
       background-color: #444444;
     }
-
-    #storedUrlsList,
-    #storedProjectsList {
+    #storedUrlsList, #storedProjectsList {
       width: var(--common-width);
       margin-left: auto;
       margin-right: auto;
@@ -109,21 +93,16 @@
       padding: 10px;
       position: relative;
     }
-
-    #storedUrlsList li,
-    #storedProjectsList li {
+    #storedUrlsList li, #storedProjectsList li {
       padding: 5px;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    #storedUrlsList li.selected,
-    #storedProjectsList li.selected {
+    #storedUrlsList li.selected, #storedProjectsList li.selected {
       background-color: #555555;
     }
-
     .listing-box {
       border: 1px solid #444444;
       padding: 10px;
@@ -133,27 +112,22 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .listing-box .info {
       display: flex;
       flex-direction: column;
       flex: 1;
     }
-
     .listing-box h3 {
       margin: 0;
       font-size: 1.2em;
     }
-
     .listing-box p {
       margin: 5px 0;
     }
-
     .listing-box .latest-version {
       font-size: 0.8em;
       color: #aaaaaa;
     }
-
     .version-dropdown {
       background-color: #333333;
       color: #ffffff;
@@ -161,7 +135,6 @@
       border-radius: 4px;
       padding: 5px;
     }
-
     .remove-button {
       background-color: #ff4444;
       color: #ffffff;
@@ -171,11 +144,9 @@
       cursor: pointer;
       margin-right: 10px;
     }
-
     .remove-button:hover {
       background-color: #ff6666;
     }
-
     #app-version-bubble {
       position: absolute;
       top: 0em;
@@ -186,7 +157,6 @@
       border-radius: 0 0 0 .4em;
       font-size: 0.6em;
     }
-
     .tabs {
       display: flex;
       padding-left: .5em;
@@ -195,38 +165,43 @@
       padding-top: .5em;
       padding-bottom: .5em;
       border-radius: 8px 8px 0 0;
-      margin-bottom: 0;
-      /* Remove bottom margin */
+      margin-bottom: 0; /* Remove bottom margin */
       background-color: #1e1e1e;
     }
-
     .tab {
-      flex: 1;
-      /* Distribute space equally */
+      flex: 1; /* Distribute space equally */
       padding: 10px 20px;
       background-color: #333333;
       color: #ffffff;
       border: 1px solid #444444;
       border-radius: 4px 4px 0 0;
       cursor: pointer;
-      text-align: center;
-      /* Center text */
+      text-align: center; /* Center text */
     }
-
     .tab.active {
       background-color: #444444;
     }
-
     .tab-content {
       display: none;
     }
-
     .tab-content.active {
       display: block;
     }
+    #project-info-container {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #333333;
+      border: 1px solid #444444;
+      border-radius: 4px;
+    }
+    #project-info h3, #project-info p {
+      margin: 5px 0;
+    }
+    .center-text {
+      text-align: center;
+    }
   </style>
 </head>
-
 <body>
   <div id="app-version-bubble">Version: <span id="app-version"></span></div>
   <div id="container">
@@ -237,11 +212,27 @@
       </div>
     </div>
     <div class="tabs">
-      <div class="tab active" data-tab="vcc-listings">VCC Listings</div>
+      <div class="tab active" data-tab="project-manager">Project Manager</div>
+      <div class="tab" data-tab="vcc-listings">VCC Listings</div>
       <div class="tab" data-tab="unity-projects">Unity Projects</div>
     </div>
     <div id="container-main">
-      <div id="vcc-listings" class="tab-content active">
+      <div id="project-manager" class="tab-content active">
+        <div class="input-group">
+          <select id="projectDropdown">
+            <option value="">Select a project</option>
+          </select>
+        </div>
+        <div id="project-info-container">
+          <div id="project-info">
+            <h3>Project Name: <span id="project-name"></span></h3>
+            <p>Unity Version: <span id="unity-version"></span></p>
+            <h4>Installed Packages:</h4>
+            <ul id="installed-packages"></ul>
+          </div>
+        </div>
+      </div>
+      <div id="vcc-listings" class="tab-content">
         <ul id="storedUrlsList"></ul>
       </div>
       <div id="unity-projects" class="tab-content">
@@ -254,5 +245,4 @@
   </div>
   <script src="renderer.js"></script>
 </body>
-
 </html>
