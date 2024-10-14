@@ -52,6 +52,7 @@ ipcRenderer.on('urls', (event, urls) => {
 
 ipcRenderer.on('project-saved', (event, projects) => {
   displayStoredProjects(projects);
+  populateProjectDropdown(projects); // Refresh the dropdown with the updated projects list
 });
 
 ipcRenderer.on('projects', (event, projects) => {
@@ -170,6 +171,7 @@ function displayStoredProjects(projects) {
     });
     storedProjectsList.appendChild(li);
   }
+  populateProjectDropdown(projects); // Refresh the dropdown with the updated projects list
 }
 
 // Function to populate the project dropdown
