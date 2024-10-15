@@ -59,9 +59,14 @@
       display: flex;
       align-items: center;
       margin-bottom: 10px;
+      margin-left: var(--common-margin-left);
+      margin-right: var(--common-margin-right);
     }
     #url, #projectPath, #projectDropdown {
       flex: 1;
+    }
+
+    .input_field{
       padding: 10px;
       background-color: #333333;
       color: #ffffff;
@@ -69,16 +74,9 @@
       border-radius: 4px;
       margin-right: 10px;
     }
+
     #saveUrlButton, #addProjectButton {
-      padding: 10px 20px;
-      background-color: #333333;
-      color: #ffffff;
-      border: 1px solid #444444;
-      border-radius: 4px;
       cursor: pointer;
-    }
-    #saveUrlButton:hover, #addProjectButton:hover {
-      background-color: #444444;
     }
     #storedUrlsList, #storedProjectsList {
       width: var(--common-width);
@@ -137,7 +135,7 @@
       padding: 5px;
     }
     .remove-button {
-      background-color: #ff4444;
+      background-color: #ff4444; /* Red background */
       color: #ffffff;
       border: none;
       border-radius: 4px;
@@ -146,7 +144,7 @@
       margin-right: 10px;
     }
     .remove-button:hover {
-      background-color: #ff6666;
+      background-color: #ff6666; /* Lighter red on hover */
     }
     #app-version-bubble {
       position: absolute;
@@ -189,17 +187,55 @@
       display: block;
     }
     #project-info-container {
-      margin-top: 20px;
+      position: relative;
+      margin-left: var(--common-margin-left);
+      margin-right: var(--common-margin-right);
+      margin-top: 1em;
+      margin-bottom: 1em;
       padding: 10px;
       background-color: #333333;
       border: 1px solid #444444;
       border-radius: 4px;
+    }
+    #project-info {
+      position: relative;
     }
     #project-info h3, #project-info p {
       margin: 5px 0;
     }
     .center-text {
       text-align: center;
+    }
+
+    .open-button {
+      position: absolute; /* Change from relative to absolute */
+      top: 0; /* Adjust the top position */
+      right: .25em; /* Adjust the right position */
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: .5em;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    
+    .open-button:hover {
+      background-color: #45a049;
+    }
+
+    .add-button {
+      padding: .8em;
+      margin: 5px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .add-button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
@@ -208,24 +244,26 @@
   <div id="container">
     <div id="container-top">
       <div class="input-group">
-        <input type="text" id="url" placeholder="Enter VCC Listing URL">
-        <button id="saveUrlButton">Save Listing</button>
+        <input class="input_field" type="text" id="url" placeholder="Enter VCC Listing URL">
+        <button class="add-button" id="saveUrlButton">Save Listing</button>
       </div>
     </div>
     <div class="tabs">
       <div class="tab active" data-tab="project-manager">Project Manager</div>
       <div class="tab" data-tab="vcc-listings">VCC Listings</div>
       <div class="tab" data-tab="unity-projects">Unity Projects</div>
+      <div class="tab" data-tab="unity-versions">Unity Versions</div>
     </div>
     <div id="container-main">
       <div id="project-manager" class="tab-content active">
         <div class="input-group">
-          <select id="projectDropdown">
+          <select class="input_field" id="projectDropdown">
             <option value="">Select a project</option>
           </select>
         </div>
         <div id="project-info-container">
           <div id="project-info">
+            <button id="openProjectButton" class="open-button">Open Project</button>
             <h3>Project Path: <span id="project-name"></span></h3>
             <p>Unity Version: <span id="unity-version"></span></p>
             <h4>Installed Packages:</h4>
@@ -238,9 +276,17 @@
       </div>
       <div id="unity-projects" class="tab-content">
         <div class="input-group">
-          <button id="addProjectButton">Add Project</button>
+          <button class="add-button" id="addProjectButton">Add Project</button>
         </div>
         <ul id="storedProjectsList"></ul>
+      </div>
+      <div id="unity-versions" class="tab-content">
+        <div class="input-group">
+          <input class="input_field" type="text" id="unityPath" placeholder="Enter Unity Path">
+          <input class="input_field" type="text" id="unityVersion" placeholder="Enter Unity Version">
+          <button id="addUnityVersionButton" class="add-button">Add Unity Version</button>
+        </div>
+        <ul id="storedUnityVersionsList"></ul>
       </div>
     </div>
   </div>

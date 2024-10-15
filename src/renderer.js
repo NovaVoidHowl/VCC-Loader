@@ -1,6 +1,7 @@
 const { ipcRenderer } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const semver = require('semver');
 
 const urlInput = document.getElementById('url');
 const saveUrlButton = document.getElementById('saveUrlButton');
@@ -16,6 +17,10 @@ const projectInfo = document.getElementById('project-info');
 const projectNameElement = document.getElementById('project-name');
 const unityVersionElement = document.getElementById('unity-version');
 const installedPackagesList = document.getElementById('installed-packages');
+const unityVersionInput = document.getElementById('unityVersion');
+const unityPathInput = document.getElementById('unityPath');
+const addUnityVersionButton = document.getElementById('addUnityVersionButton');
+const storedUnityVersionsList = document.getElementById('storedUnityVersionsList');
 
 let projects = []; // Global variable to store projects
 
@@ -104,10 +109,17 @@ async function displayStoredUrls(urls) {
   storedUrlsList.innerHTML = '';
   for (const url of urls) {
     try {
+      console.log(`Fetching URL: ${url}`);
       const response = await fetch(url);
       const data = await response.json();
+      console.log(`Fetched data:`, data);
+
       const packageInfo = data.packages?.[Object.keys(data.packages)[0]];
+      console.log(`Extracted package info:`, packageInfo);
+
       const versions = Object.keys(packageInfo?.versions || {}).sort(semver.rcompare);
+      console.log(`Sorted versions:`, versions);
+
       const latestVersion = versions[0]; // The first element is the latest version after sorting
       const li = document.createElement('li');
       li.classList.add('listing-box');
@@ -240,8 +252,16 @@ projectDropdown.addEventListener('change', async (event) => {
           </li>
         `).join('') : '<li>No packages installed</li>'}
       </ul>
+      <button id="openProjectButton" class="open-button">Open Project</button>
     `;
     projectInfo.classList.remove('center-text');
+
+    // Add event listener for the open project button
+    const openProjectButton = document.getElementById('openProjectButton');
+    openProjectButton.addEventListener('click', () => {
+      ipcRenderer.send('open-project', selectedProjectPath);
+    });
+
   } else {
     projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
     projectInfo.classList.add('center-text');
@@ -255,3 +275,47 @@ ipcRenderer.send('get-projects');
 // Set initial info section text
 projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
 projectInfo.classList.add('center-text');
+
+// Handle adding a new Unity version
+addUnityVersionButton.addEventListener('click', () => {
+  const version = unityVersionInput.value;
+  const path = unityPathInput.value;
+  if (version && path) {
+    ipcRenderer.send('save-unity-version', { version, path });
+  }
+});
+
+// Display stored Unity versions
+ipcRenderer.on('unity-versions', (event, unityVersions) => {
+  storedUnityVersionsList.innerHTML = '';
+  unityVersions.forEach(({ version, path }) => {
+    const li = document.createElement('li');
+    li.classList.add('listing-box');
+    li.innerHTML = `
+      <button class="remove-button">X</button>
+      <div class="info">
+        <h3>${version}</h3>
+        <p>${path}</p>
+      </div>
+    `;
+    li.querySelector('.remove-button').addEventListener('click', () => {
+      if (confirm('Are you sure you want to remove this Unity version?')) {
+        ipcRenderer.send('delete-unity-version', version);
+      }
+    });
+    storedUnityVersionsList.appendChild(li);
+  });
+});
+
+// Request stored Unity versions on load
+ipcRenderer.send('get-unity-versions');
+
+// Open file picker when clicking on the Unity path input field
+unityPathInput.addEventListener('click', () => {
+  ipcRenderer.invoke('open-file-dialog').then(result => {
+    if (!result.canceled) {
+      unityPathInput.value = result.filePaths[0];
+      unityVersionInput.value = result.unityVersion; // Auto-fill the Unity version
+    }
+  });
+});
