@@ -208,6 +208,11 @@ function populateProjectDropdown(projects) {
   });
 }
 
+// Function to check if a Unity version exists in the stored versions
+function unityVersionExists(version, unityVersions) {
+  return unityVersions.some(uv => uv.version === version);
+}
+
 // Event listener for project dropdown change
 projectDropdown.addEventListener('change', async (event) => {
   const selectedProjectPath = event.target.value;
@@ -240,6 +245,10 @@ projectDropdown.addEventListener('change', async (event) => {
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
     console.log('Filtered packages:', filteredPackages);
     projectInfo.innerHTML = `
+      <div id="unity-version-warning" class="warning-banner" style="display: none;">
+        <p>The Unity version for this project is not in the list. Please add it first.</p>
+        <button id="goToUnityVersionsButton" class="add-button">Go to Unity Versions</button>
+      </div>
       <h3>Project Path: <span id="project-name">${selectedProjectPath}</span></h3>
       <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
       <h4>Installed Packages:</h4>
@@ -256,10 +265,32 @@ projectDropdown.addEventListener('change', async (event) => {
     `;
     projectInfo.classList.remove('center-text');
 
-    // Add event listener for the open project button
+    // Check if the Unity version exists in the stored versions
+    const unityVersions = await ipcRenderer.invoke('get-unity-versions');
     const openProjectButton = document.getElementById('openProjectButton');
+    const unityVersionWarning = document.getElementById('unity-version-warning');
+    const goToUnityVersionsButton = document.getElementById('goToUnityVersionsButton');
+
+    if (!unityVersionExists(unityVersion, unityVersions)) {
+      openProjectButton.disabled = true;
+      openProjectButton.style.display = 'none'; // Hide the button
+      openProjectButton.style.backgroundColor = '#888888'; // Gray out the button
+      unityVersionWarning.style.display = 'block'; // Show the warning banner
+    } else {
+      openProjectButton.disabled = false;
+      openProjectButton.style.display = 'block'; // Show the button
+      openProjectButton.style.backgroundColor = ''; // Reset the button color
+      unityVersionWarning.style.display = 'none'; // Hide the warning banner
+    }
+
+    // Add event listener for the open project button
     openProjectButton.addEventListener('click', () => {
       ipcRenderer.send('open-project', selectedProjectPath);
+    });
+
+    // Add event listener for the "Go to Unity Versions" button
+    goToUnityVersionsButton.addEventListener('click', () => {
+      document.querySelector('.tab[data-tab="unity-versions"]').click();
     });
 
   } else {
@@ -285,6 +316,9 @@ addUnityVersionButton.addEventListener('click', () => {
   }
 });
 
+// Request stored Unity versions on load
+ipcRenderer.send('request-unity-versions');
+
 // Display stored Unity versions
 ipcRenderer.on('unity-versions', (event, unityVersions) => {
   storedUnityVersionsList.innerHTML = '';
@@ -307,8 +341,6 @@ ipcRenderer.on('unity-versions', (event, unityVersions) => {
   });
 });
 
-// Request stored Unity versions on load
-ipcRenderer.send('get-unity-versions');
 
 // Open file picker when clicking on the Unity path input field
 unityPathInput.addEventListener('click', () => {
@@ -318,4 +350,110 @@ unityPathInput.addEventListener('click', () => {
       unityVersionInput.value = result.unityVersion; // Auto-fill the Unity version
     }
   });
+});
+
+// Function to refresh the project info section
+async function refreshProjectInfo() {
+  const selectedProjectPath = projectDropdown.value;
+  if (selectedProjectPath) {
+    const projectVersionPath = path.join(selectedProjectPath, 'ProjectSettings', 'ProjectVersion.txt');
+    let unityVersion = 'Unknown';
+    if (fs.existsSync(projectVersionPath)) {
+      const versionContent = fs.readFileSync(projectVersionPath, 'utf8');
+      const versionMatch = versionContent.match(/m_EditorVersion: (.+)/);
+      if (versionMatch) {
+        unityVersion = versionMatch[1];
+      }
+    }
+
+    const packagesManifestPath = path.join(selectedProjectPath, 'Packages', 'manifest.json');
+    let packages = [];
+    if (fs.existsSync(packagesManifestPath)) {
+      const manifestContent = fs.readFileSync(packagesManifestPath, 'utf8');
+      const manifestJson = JSON.parse(manifestContent);
+      packages = Object.keys(manifestJson.dependencies).map(pkgName => ({
+        name: pkgName,
+        version: manifestJson.dependencies[pkgName],
+        isDefault: pkgName.startsWith('com.unity')
+      }));
+    }
+
+    const filteredPackages = packages.filter(pkg => !pkg.isDefault);
+    projectInfo.innerHTML = `
+      <div id="unity-version-warning" class="warning-banner" style="display: none;">
+        <p>The Unity version for this project is not in the list. Please add it first.</p>
+        <button id="goToUnityVersionsButton" class="add-button">Go to Unity Versions</button>
+      </div>
+      <h3>Project Path: <span id="project-name">${selectedProjectPath}</span></h3>
+      <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
+      <h4>Installed Packages:</h4>
+      <ul id="installed-packages">
+        ${filteredPackages.length ? filteredPackages.map(pkg => `
+          <li class="listing-box">
+            <div class="info">
+              <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
+            </div>
+          </li>
+        `).join('') : '<li>No packages installed</li>'}
+      </ul>
+      <button id="openProjectButton" class="open-button">Open Project</button>
+    `;
+    projectInfo.classList.remove('center-text');
+
+    const unityVersions = await ipcRenderer.invoke('get-unity-versions');
+    const openProjectButton = document.getElementById('openProjectButton');
+    const unityVersionWarning = document.getElementById('unity-version-warning');
+    const goToUnityVersionsButton = document.getElementById('goToUnityVersionsButton');
+
+    if (!unityVersionExists(unityVersion, unityVersions)) {
+      openProjectButton.disabled = true;
+      openProjectButton.style.display = 'none';
+      openProjectButton.style.backgroundColor = '#888888';
+      unityVersionWarning.style.display = 'block';
+    } else {
+      openProjectButton.disabled = false;
+      openProjectButton.style.display = 'block';
+      openProjectButton.style.backgroundColor = '';
+      unityVersionWarning.style.display = 'none';
+    }
+
+    openProjectButton.addEventListener('click', () => {
+      ipcRenderer.send('open-project', selectedProjectPath);
+    });
+
+    goToUnityVersionsButton.addEventListener('click', () => {
+      document.querySelector('.tab[data-tab="unity-versions"]').click();
+    });
+  } else {
+    projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
+    projectInfo.classList.add('center-text');
+  }
+}
+
+// Request stored Unity versions on load
+ipcRenderer.send('request-unity-versions');
+
+// Display stored Unity versions and refresh project info section
+ipcRenderer.on('unity-versions', (event, unityVersions) => {
+  storedUnityVersionsList.innerHTML = '';
+  unityVersions.forEach(({ version, path }) => {
+    const li = document.createElement('li');
+    li.classList.add('listing-box');
+    li.innerHTML = `
+      <button class="remove-button">X</button>
+      <div class="info">
+        <h3>${version}</h3>
+        <p>${path}</p>
+      </div>
+    `;
+    li.querySelector('.remove-button').addEventListener('click', () => {
+      if (confirm('Are you sure you want to remove this Unity version?')) {
+        ipcRenderer.send('delete-unity-version', version);
+      }
+    });
+    storedUnityVersionsList.appendChild(li);
+  });
+
+  // Refresh the project info section
+  refreshProjectInfo();
 });

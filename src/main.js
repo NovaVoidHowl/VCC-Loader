@@ -195,7 +195,19 @@ if (!gotTheLock) {
     }
   });
 
-  ipcMain.on('get-unity-versions', async (event) => {
+  // Handle retrieving Unity versions
+  ipcMain.handle('get-unity-versions', async () => {
+    try {
+      const unityVersions = await storage.getItem('unityVersions') || [];
+      return unityVersions;
+    } catch (error) {
+      console.error('Failed to get Unity versions:', error);
+      throw error;
+    }
+  });
+  
+  // Add an 'on' event to trigger the 'handle' function
+  ipcMain.on('request-unity-versions', async (event) => {
     try {
       const unityVersions = await storage.getItem('unityVersions') || [];
       event.reply('unity-versions', unityVersions);
