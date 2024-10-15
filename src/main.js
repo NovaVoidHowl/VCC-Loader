@@ -6,6 +6,9 @@ const { exec } = require('child_process');
 const winVersionInfo = require('win-version-info');
 const semver = require('semver');
 
+let mainWindow;
+let deeplinkingUrl;
+
 // Initialize node-persist with a custom storage directory
 async function initializeStorage() {
   try {
@@ -27,9 +30,6 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-let mainWindow;
-let deeplinkingUrl;
-
 // Ensure only one instance of the app is running
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -40,6 +40,22 @@ if (!gotTheLock) {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
+  
+      // Parse command-line arguments for the second instance
+      commandLine.forEach(arg => {
+        if (arg.startsWith('--vcc-url=')) {
+          deeplinkingUrl = extractDataUrl(arg.split('=')[1]);
+          console.log(`Parsed deeplinking URL from command-line: ${deeplinkingUrl}`);
+        } else if (arg.startsWith('vcc://')) {
+          deeplinkingUrl = extractDataUrl(arg);
+          console.log(`Parsed deeplinking URL from command-line: ${deeplinkingUrl}`);
+        }
+      });
+  
+      // Send the deeplink URL to the renderer process
+      if (deeplinkingUrl) {
+        mainWindow.webContents.send('deeplinking-url', deeplinkingUrl);
+      }
     }
   });
 
@@ -156,11 +172,11 @@ if (!gotTheLock) {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory']
     });
-  
+
     if (!result.canceled && result.filePaths.length > 0) {
       const projectPath = result.filePaths[0];
       const isValidUnityProject = fs.existsSync(path.join(projectPath, 'ProjectSettings')) && fs.existsSync(path.join(projectPath, 'Assets'));
-      
+
       if (isValidUnityProject) {
         const projectVersionPath = path.join(projectPath, 'ProjectSettings', 'ProjectVersion.txt');
         let unityVersion = 'Unknown';
@@ -205,7 +221,7 @@ if (!gotTheLock) {
       throw error;
     }
   });
-  
+
   // Add an 'on' event to trigger the 'handle' function
   ipcMain.on('request-unity-versions', async (event) => {
     try {
@@ -228,82 +244,39 @@ if (!gotTheLock) {
   });
 
   // Handle open-file-dialog event
-
   ipcMain.handle('open-file-dialog', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],
       filters: [{ name: 'Unity Executable', extensions: ['exe'] }]
     });
-  
+
     if (!result.canceled && result.filePaths.length > 0) {
       const selectedFile = result.filePaths[0];
       if (path.basename(selectedFile).toLowerCase() === 'unity.exe') {
         // Extract Unity version from the executable
-        const versionInfo = winVersionInfo(selectedFile);
+          const versionInfo = winVersionInfo(selectedFile);
         let unityVersion = versionInfo.ProductVersion;
         console.log('Unity version pre clean:', unityVersion);
   
         // Remove metadata after the underscore
         if (unityVersion.includes('_')) {
           unityVersion = unityVersion.split('_')[0];
-        }
+            }
         
         console.log('Unity version post trim:', unityVersion);
 
         // remove any preceding or trailing whitespace
         unityVersion = unityVersion.trim();
-  
+
         return { canceled: false, filePaths: result.filePaths, unityVersion };
       } else {
         dialog.showErrorBox('Invalid File', 'Please select the Unity.exe file.');
         return { canceled: true, filePaths: [] };
       }
     }
-  
+
     return result;
   });
-  // ipcMain.handle('open-file-dialog', async () => {
-  //   const result = await dialog.showOpenDialog(mainWindow, {
-  //     properties: ['openFile'],
-  //     filters: [{ name: 'Unity Executable', extensions: ['exe'] }]
-  //   });
-
-  //   // Ensure only Unity.exe files are accepted
-  //   if (!result.canceled && result.filePaths.length > 0) {
-  //     const selectedFile = result.filePaths[0];
-  //     if (path.basename(selectedFile).toLowerCase() === 'unity.exe') {
-  //       let unityVersion = 'Unknown';
-
-  //       if (process.platform === 'win32') {
-  //         // Extract version information from Unity.exe on Windows
-  //         const versionInfo = winVersionInfo(selectedFile);
-  //         unityVersion = versionInfo.ProductVersion;
-  //       } else if (process.platform === 'linux') {
-  //         // Extract version information from Unity executable on Linux
-  //         const execSync = require('child_process').execSync;
-  //         try {
-  //           const output = execSync(`strings "${selectedFile}" | grep -oP 'Unity [0-9]+\.[0-9]+\.[0-9]+f[0-9]+'`, { encoding: 'utf8' });
-  //           const match = output.match(/Unity ([0-9]+\.[0-9]+\.[0-9]+f[0-9]+)/);
-  //           if (match) {
-  //             unityVersion = match[1];
-  //           }
-  //         } catch (error) {
-  //           console.error('Failed to extract Unity version on Linux:', error);
-  //         }
-  //       }
-
-  //       // Clean the version string using semver
-  //       unityVersion = semver.clean(unityVersion);
-
-  //       return { canceled: false, filePaths: [selectedFile], unityVersion };
-  //     } else {
-  //       dialog.showErrorBox('Invalid File', 'Please select the Unity.exe file.');
-  //       return { canceled: true, filePaths: [] };
-  //     }
-  //   }
-
-  //   return result;
-  // });
 
   // Update the open-project handler to use the stored Unity versions
   ipcMain.on('open-project', async (event, projectPath) => {

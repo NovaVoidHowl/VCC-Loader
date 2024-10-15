@@ -249,12 +249,9 @@
 <body>
   <div id="app-version-bubble">Version: <span id="app-version"></span></div>
   <div id="container">
-    <div id="container-top">
-      <div class="input-group">
-        <input class="input_field" type="text" id="url" placeholder="Enter VCC Listing URL">
-        <button class="add-button" id="saveUrlButton">Save Listing</button>
-      </div>
-    </div>
+    <!-- <div id="container-top">
+      
+    </div> -->
     <div class="tabs">
       <div class="tab active" data-tab="project-manager">Project Manager</div>
       <div class="tab" data-tab="vcc-listings">VCC Listings</div>
@@ -279,6 +276,10 @@
         </div>
       </div>
       <div id="vcc-listings" class="tab-content">
+        <div class="input-group">
+          <input class="input_field" type="text" id="url" placeholder="Enter VCC Listing URL">
+          <button class="add-button" id="saveUrlButton">Save Listing</button>
+        </div>
         <ul id="storedUrlsList"></ul>
       </div>
       <div id="unity-projects" class="tab-content">

@@ -42,9 +42,11 @@ ipcRenderer.on('set-url', (event, url) => {
 
 ipcRenderer.on('deeplinking-url', (event, url) => {
   console.log(`Received deeplinking URL in renderer: ${url}`);
-  if (urlInput) {
+  if (url) {
     urlInput.value = url;
     console.log(`URL input box set to deeplinking URL: ${url}`);
+    // Open the VCC Listings page
+    document.querySelector('.tab[data-tab="vcc-listings"]').click();
   }
 });
 
@@ -340,7 +342,6 @@ ipcRenderer.on('unity-versions', (event, unityVersions) => {
     storedUnityVersionsList.appendChild(li);
   });
 });
-
 
 // Open file picker when clicking on the Unity path input field
 unityPathInput.addEventListener('click', () => {
