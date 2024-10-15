@@ -163,7 +163,7 @@ if (!gotTheLock) {
     }
   });
 
-   ipcMain.on('select-project-folder', async (event) => {
+  ipcMain.on('select-project-folder', async (event) => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory']
     });
@@ -183,20 +183,7 @@ if (!gotTheLock) {
           }
         }
   
-        // Read installed packages from the Unity project
-        const packagesManifestPath = path.join(projectPath, 'Packages', 'manifest.json');
-        let packages = [];
-        if (fs.existsSync(packagesManifestPath)) {
-          const manifestContent = fs.readFileSync(packagesManifestPath, 'utf8');
-          const manifestJson = JSON.parse(manifestContent);
-          packages = Object.keys(manifestJson.dependencies).map(pkgName => ({
-            name: pkgName,
-            version: manifestJson.dependencies[pkgName],
-            isDefault: false
-          }));
-        }
-  
-        const project = { path: projectPath, version: unityVersion, packages };
+        const project = { path: projectPath, version: unityVersion };
         event.reply('project-saved', [project]);
         ipcMain.emit('save-project', event, project);
       } else {

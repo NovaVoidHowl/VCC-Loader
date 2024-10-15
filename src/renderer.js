@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
-const semver = require('semver');
+const path = require('path');
+const fs = require('fs');
 
 const urlInput = document.getElementById('url');
 const saveUrlButton = document.getElementById('saveUrlButton');
@@ -145,7 +146,6 @@ async function displayStoredUrls(urls) {
   }
 }
 
-
 ipcRenderer.on('projects', (event, savedProjects) => {
   projects = savedProjects; // Update global projects variable
   console.log('Projects loaded:', projects);
@@ -197,29 +197,51 @@ function populateProjectDropdown(projects) {
 }
 
 // Event listener for project dropdown change
-projectDropdown.addEventListener('change', (event) => {
+projectDropdown.addEventListener('change', async (event) => {
   const selectedProjectPath = event.target.value;
   console.log('Selected project path:', selectedProjectPath);
   if (selectedProjectPath) {
-    const selectedProject = projects.find(project => project.path === selectedProjectPath);
-    console.log('Selected project:', selectedProject);
-    if (selectedProject) {
-      projectInfo.innerHTML = `
-        <h3>Project Path: <span id="project-name">${selectedProject.path}</span></h3>
-        <p>Unity Version: <span id="unity-version">${selectedProject.version}</span></p>
-        <h4>Installed Packages:</h4>
-        <ul id="installed-packages">
-          ${selectedProject.packages ? selectedProject.packages.filter(pkg => !pkg.isDefault).map(pkg => `
-            <li class="listing-box">
-              <div class="info">
-                <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
-              </div>
-            </li>
-          `).join('') : '<li>No packages installed</li>'}
-        </ul>
-      `;
-      projectInfo.classList.remove('center-text');
+    // Read project details from the project folder
+    const projectVersionPath = path.join(selectedProjectPath, 'ProjectSettings', 'ProjectVersion.txt');
+    let unityVersion = 'Unknown';
+    if (fs.existsSync(projectVersionPath)) {
+      const versionContent = fs.readFileSync(projectVersionPath, 'utf8');
+      const versionMatch = versionContent.match(/m_EditorVersion: (.+)/);
+      if (versionMatch) {
+        unityVersion = versionMatch[1];
+      }
     }
+
+    // Read installed packages from the Unity project
+    const packagesManifestPath = path.join(selectedProjectPath, 'Packages', 'manifest.json');
+    let packages = [];
+    if (fs.existsSync(packagesManifestPath)) {
+      const manifestContent = fs.readFileSync(packagesManifestPath, 'utf8');
+      const manifestJson = JSON.parse(manifestContent);
+      packages = Object.keys(manifestJson.dependencies).map(pkgName => ({
+        name: pkgName,
+        version: manifestJson.dependencies[pkgName],
+        isDefault: pkgName.startsWith('com.unity')
+      }));
+    }
+
+    const filteredPackages = packages.filter(pkg => !pkg.isDefault);
+    console.log('Filtered packages:', filteredPackages);
+    projectInfo.innerHTML = `
+      <h3>Project Path: <span id="project-name">${selectedProjectPath}</span></h3>
+      <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
+      <h4>Installed Packages:</h4>
+      <ul id="installed-packages">
+        ${filteredPackages.length ? filteredPackages.map(pkg => `
+          <li class="listing-box">
+            <div class="info">
+              <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
+            </div>
+          </li>
+        `).join('') : '<li>No packages installed</li>'}
+      </ul>
+    `;
+    projectInfo.classList.remove('center-text');
   } else {
     projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
     projectInfo.classList.add('center-text');
