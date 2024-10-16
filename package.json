@@ -1,7 +1,7 @@
 {
   "name": "vcc-loader",
   "productName": "VCC Loader",
-  "version": "0.15.0",
+  "version": "0.16.1",
   "main": "src/main.js",
   "author": "NovaVoidHowl",
   "description": "",
@@ -27,6 +27,7 @@
     "rimraf": "^6.0.1"
   },
   "dependencies": {
+    "node-fetch": "^3.3.2",
     "node-persist": "^4.0.3",
     "semver": "^7.6.3",
     "sudo-prompt": "^9.2.1",

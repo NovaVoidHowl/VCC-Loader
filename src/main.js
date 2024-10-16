@@ -358,3 +358,33 @@ function extractDataUrl(vccUrl) {
   }
   return null;
 }
+
+ipcMain.handle('get-vcc-listings', async () => {
+  try {
+    const urls = await storage.getItem('urls') || [];
+    const listings = await Promise.all(urls.map(async url => {
+      const packageNames = await extractPackageNamesFromUrl(url);
+      return packageNames.map(name => ({ name, url }));
+    }));
+    return listings.flat();
+  } catch (error) {
+    console.error('Failed to get VCC listings:', error);
+    throw error;
+  }
+});
+
+async function extractPackageNamesFromUrl(url) {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.packages) {
+      return Object.keys(data.packages);
+    } else {
+      throw new Error('No packages found in the listing');
+    }
+  } catch (error) {
+    console.error('Failed to fetch or parse listing:', error);
+    return [];
+  }
+}

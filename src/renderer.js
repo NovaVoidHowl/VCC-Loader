@@ -71,6 +71,8 @@ ipcRenderer.on('projects', (event, projects) => {
 saveUrlButton.addEventListener('click', () => {
   const url = urlInput.value;
   ipcRenderer.send('save-url', url);
+  // Refresh the project info section
+  refreshProjectInfo();
 });
 
 addProjectButton.addEventListener('click', () => {
@@ -142,6 +144,8 @@ async function displayStoredUrls(urls) {
               const packageList = packageNames.join(', ');
               if (confirm(`Are you sure you want to remove this listing? This will remove the following packages: ${packageList}`)) {
                 ipcRenderer.send('delete-url', url);
+                // Refresh the project info section
+                refreshProjectInfo();
               }
             });
             isFirstPackage = false;
@@ -308,7 +312,8 @@ async function refreshProjectInfo() {
         name: pkgName,
         version: manifestJson.dependencies[pkgName],
         isDefault: pkgName.startsWith('com.unity'),
-        isGitUrl: manifestJson.dependencies[pkgName].endsWith('.git') || manifestJson.dependencies[pkgName].match(/\.git#.+/)
+        isGitUrl: manifestJson.dependencies[pkgName].endsWith('.git') || manifestJson.dependencies[pkgName].match(/\.git#.+/),
+        listingUrl: '' // Initialize listing URL as empty
       }));
     }
 
@@ -321,7 +326,8 @@ async function refreshProjectInfo() {
         version: vpmJson.locked[pkgName].version,
         isDefault: false,
         isGitUrl: false, // VPM packages are never Git repositories
-        isVpmPackage: true // Mark as VPM package
+        isVpmPackage: true, // Mark as VPM package
+        listingUrl: '' // Initialize listing URL as empty
       }));
       packages = packages.concat(vpmPackages);
     }
@@ -351,11 +357,23 @@ async function refreshProjectInfo() {
             isDefault: false,
             isGitUrl: false,
             isVpmPackage: false,
-            isFolderPackage: true // Mark as folder package
+            isFolderPackage: true, // Mark as folder package
+            listingUrl: '' // No listing URL for folder packages
           });
         }
       }
     }
+
+    // Retrieve VCC listings info
+    const vccListings = await ipcRenderer.invoke('get-vcc-listings');
+
+    // Match package names with VCC listings to get URLs
+    packages.forEach(pkg => {
+      const matchingListing = vccListings.find(listing => listing.name === pkg.name);
+      if (matchingListing) {
+        pkg.listingUrl = matchingListing.url;
+      }
+    });
 
     // Filter out com.unity packages
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
@@ -390,6 +408,7 @@ async function refreshProjectInfo() {
               <div class="info">
                 <h3>${pkg.name}</h3>
                 ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` : ``}
+                ${(pkg.listingUrl) ? `<p class="latest-version">${pkg.listingUrl}</p>` : ``}
               </div>
               ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
             </li>
