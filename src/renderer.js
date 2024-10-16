@@ -116,29 +116,41 @@ async function displayStoredUrls(urls) {
       const data = await response.json();
       console.log(`Fetched data:`, data);
 
-      const packageInfo = data.packages?.[Object.keys(data.packages)[0]];
-      console.log(`Extracted package info:`, packageInfo);
+      if (data.packages) {
+        let isFirstPackage = true;
+        const packageNames = Object.keys(data.packages);
+        for (const packageName of packageNames) {
+          const packageInfo = data.packages[packageName];
+          console.log(`Extracted package info for ${packageName}:`, packageInfo);
 
-      const versions = Object.keys(packageInfo?.versions || {}).sort(semver.rcompare);
-      console.log(`Sorted versions:`, versions);
+          const versions = Object.keys(packageInfo.versions || {}).sort(semver.rcompare);
+          console.log(`Sorted versions for ${packageName}:`, versions);
 
-      const latestVersion = versions[0]; // The first element is the latest version after sorting
-      const li = document.createElement('li');
-      li.classList.add('listing-box');
-      li.innerHTML = `
-        <button class="remove-button">X</button>
-        <div class="info">
-          <h3>${data.name || 'Invalid / Corrupt listing'} <span class="latest-version">${latestVersion ? `(Latest version ${latestVersion})` : ''}</span></h3>
-          <p>${url}</p>
-        </div>
-        ${versions.length ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
-      `;
-      li.querySelector('.remove-button').addEventListener('click', () => {
-        if (confirm('Are you sure you want to remove this listing?')) {
-          ipcRenderer.send('delete-url', url);
+          const latestVersion = versions[0]; // The first element is the latest version after sorting
+          const li = document.createElement('li');
+          li.classList.add('listing-box');
+          li.innerHTML = `
+            ${isFirstPackage ? '<button class="remove-button">X</button>' : '<div class="spacer"></div>'}
+            <div class="info">
+              <h3>${packageName} <span class="latest-version">${latestVersion ? `(Latest version ${latestVersion})` : ''}</span></h3>
+              <p>${url}</p>
+            </div>
+            ${versions.length ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
+          `;
+          if (isFirstPackage) {
+            li.querySelector('.remove-button').addEventListener('click', () => {
+              const packageList = packageNames.join(', ');
+              if (confirm(`Are you sure you want to remove this listing? This will remove the following packages: ${packageList}`)) {
+                ipcRenderer.send('delete-url', url);
+              }
+            });
+            isFirstPackage = false;
+          }
+          storedUrlsList.appendChild(li);
         }
-      });
-      storedUrlsList.appendChild(li);
+      } else {
+        throw new Error('No packages found in the listing');
+      }
     } catch (error) {
       console.error('Failed to fetch or parse listing:', error);
       const li = document.createElement('li');
@@ -160,11 +172,9 @@ async function displayStoredUrls(urls) {
   }
 }
 
-ipcRenderer.on('projects', (event, savedProjects) => {
-  projects = savedProjects; // Update global projects variable
-  console.log('Projects loaded:', projects);
-  displayStoredProjects(projects);
-  populateProjectDropdown(projects);
+// Listen for the 'url-removed' event to update the UI
+ipcRenderer.on('url-removed', (event, urls) => {
+  displayStoredUrls(urls);
 });
 
 function displayStoredProjects(projects) {
@@ -359,18 +369,18 @@ async function refreshProjectInfo() {
       <h4>Installed Packages:</h4>
       <ul id="installed-packages">
         ${filteredPackages.length ? filteredPackages.map(pkg => {
-          let displayVersion = pkg.version;
-          if (pkg.isGitUrl && pkg.version.includes('#')) {
-            const versionParts = pkg.version.split('#');
-            displayVersion = `Current Version ${versionParts[1]}`;
-          }
-          if (pkg.isVpmPackage) {
-            displayVersion = `Current Version ${pkg.version}`;
-          }
-          if (pkg.isFolderPackage) {
-            displayVersion = `Current Version ${pkg.version}`;
-          }
-          return `
+      let displayVersion = pkg.version;
+      if (pkg.isGitUrl && pkg.version.includes('#')) {
+        const versionParts = pkg.version.split('#');
+        displayVersion = `Current Version ${versionParts[1]}`;
+      }
+      if (pkg.isVpmPackage) {
+        displayVersion = `Current Version ${pkg.version}`;
+      }
+      if (pkg.isFolderPackage) {
+        displayVersion = `Current Version ${pkg.version}`;
+      }
+      return `
             <li class="listing-box">
               <div class="info-icons-group">
                 ${pkg.isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
@@ -379,12 +389,12 @@ async function refreshProjectInfo() {
               </div>
               <div class="info">
                 <h3>${pkg.name}</h3>
-                ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` :``}
+                ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` : ``}
               </div>
               ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
             </li>
           `;
-        }).join('') : '<li>No packages installed</li>'}
+    }).join('') : '<li>No packages installed</li>'}
       </ul>
       <button id="openProjectButton" class="open-button">Open Project</button>
     `;

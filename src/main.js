@@ -114,7 +114,7 @@ if (!gotTheLock) {
       let urls = await storage.getItem('urls') || [];
       urls = urls.filter(storedUrl => storedUrl !== url);
       await storage.setItem('urls', urls);
-      event.reply('url-saved', urls);
+      event.reply('url-removed', urls);
     } catch (error) {
       console.error('Failed to delete URL:', error);
     }
