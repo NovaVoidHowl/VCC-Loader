@@ -316,6 +316,37 @@ async function refreshProjectInfo() {
       packages = packages.concat(vpmPackages);
     }
 
+    // Read subfolders in Packages directory
+    const packagesDir = path.join(selectedProjectPath, 'Packages');
+    const subfolders = fs.readdirSync(packagesDir).filter(subfolder => {
+      const subfolderPath = path.join(packagesDir, subfolder);
+      return fs.lstatSync(subfolderPath).isDirectory();
+    });
+
+    // Check for package.json in each subfolder
+    for (const subfolder of subfolders) {
+      const packageJsonPath = path.join(packagesDir, subfolder, 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+        const packageJson = JSON.parse(packageJsonContent);
+        const packageName = packageJson.name;
+        const packageVersion = packageJson.version;
+
+        // Check if the package is already listed in VPM packages
+        const isDuplicate = packages.some(pkg => pkg.name === packageName && pkg.version === packageVersion);
+        if (!isDuplicate) {
+          packages.push({
+            name: packageName,
+            version: packageVersion,
+            isDefault: false,
+            isGitUrl: false,
+            isVpmPackage: false,
+            isFolderPackage: true // Mark as folder package
+          });
+        }
+      }
+    }
+
     // Filter out com.unity packages
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
     projectInfo.innerHTML = `
@@ -336,17 +367,21 @@ async function refreshProjectInfo() {
           if (pkg.isVpmPackage) {
             displayVersion = `Current Version ${pkg.version}`;
           }
+          if (pkg.isFolderPackage) {
+            displayVersion = `Current Version ${pkg.version}`;
+          }
           return `
             <li class="listing-box">
               <div class="info-icons-group">
                 ${pkg.isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
                 ${pkg.isVpmPackage ? '<img src="../src/images/vcc-logo.png" alt="VCC Logo" class="vcc-logo">' : ''}
+                ${pkg.isFolderPackage ? '<img src="../src/images/folder.svg" alt="Folder Icon" class="folder-icon">' : ''}
               </div>
               <div class="info">
                 <h3>${pkg.name}</h3>
                 ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` :``}
               </div>
-              ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
+              ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
             </li>
           `;
         }).join('') : '<li>No packages installed</li>'}
