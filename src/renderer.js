@@ -243,7 +243,6 @@ projectDropdown.addEventListener('change', async (event) => {
         isDefault: pkgName.startsWith('com.unity')
       }));
     }
-
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
     console.log('Filtered packages:', filteredPackages);
     projectInfo.innerHTML = `
@@ -255,13 +254,28 @@ projectDropdown.addEventListener('change', async (event) => {
       <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
       <h4>Installed Packages:</h4>
       <ul id="installed-packages">
-        ${filteredPackages.length ? filteredPackages.map(pkg => `
-          <li class="listing-box">
-            <div class="info">
-              <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
-            </div>
-          </li>
-        `).join('') : '<li>No packages installed</li>'}
+        ${filteredPackages.length ? filteredPackages.map(pkg => {
+          const isGitUrl = pkg.version.endsWith('.git') || pkg.version.match(/\.git#.+/);
+          let displayVersion = pkg.version;
+          if (isGitUrl && pkg.version.includes('#')) {
+            const versionParts = pkg.version.split('#');
+            displayVersion = `Current Version ${versionParts[1]}`;
+          }
+          return `
+            <li class="listing-box">
+              <div class="info-icons-group">
+                ${isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
+              </div>
+              <div class="info">
+                <h3>
+                  ${pkg.name}
+                  <span class="latest-version">(${pkg.version})</span>
+                  ${isGitUrl && pkg.version.includes('#') ? `<span class="current-version">${displayVersion}</span>` : ''}
+                </h3>
+              </div>
+            </li>
+          `;
+        }).join('') : '<li>No packages installed</li>'}
       </ul>
       <button id="openProjectButton" class="open-button">Open Project</button>
     `;
