@@ -217,102 +217,7 @@ function unityVersionExists(version, unityVersions) {
 
 // Event listener for project dropdown change
 projectDropdown.addEventListener('change', async (event) => {
-  const selectedProjectPath = event.target.value;
-  console.log('Selected project path:', selectedProjectPath);
-  if (selectedProjectPath) {
-    // Read project details from the project folder
-    const projectVersionPath = path.join(selectedProjectPath, 'ProjectSettings', 'ProjectVersion.txt');
-    let unityVersion = 'Unknown';
-    if (fs.existsSync(projectVersionPath)) {
-      const versionContent = fs.readFileSync(projectVersionPath, 'utf8');
-      const versionMatch = versionContent.match(/m_EditorVersion: (.+)/);
-      if (versionMatch) {
-        unityVersion = versionMatch[1];
-      }
-    }
-
-    // Read installed packages from the Unity project
-    const packagesManifestPath = path.join(selectedProjectPath, 'Packages', 'manifest.json');
-    let packages = [];
-    if (fs.existsSync(packagesManifestPath)) {
-      const manifestContent = fs.readFileSync(packagesManifestPath, 'utf8');
-      const manifestJson = JSON.parse(manifestContent);
-      packages = Object.keys(manifestJson.dependencies).map(pkgName => ({
-        name: pkgName,
-        version: manifestJson.dependencies[pkgName],
-        isDefault: pkgName.startsWith('com.unity')
-      }));
-    }
-    const filteredPackages = packages.filter(pkg => !pkg.isDefault);
-    console.log('Filtered packages:', filteredPackages);
-    projectInfo.innerHTML = `
-      <div id="unity-version-warning" class="warning-banner" style="display: none;">
-        <p>The Unity version for this project is not in the list. Please add it first.</p>
-        <button id="goToUnityVersionsButton" class="add-button">Go to Unity Versions</button>
-      </div>
-      <h3>Project Path: <span id="project-name">${selectedProjectPath}</span></h3>
-      <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
-      <h4>Installed Packages:</h4>
-      <ul id="installed-packages">
-        ${filteredPackages.length ? filteredPackages.map(pkg => {
-          const isGitUrl = pkg.version.endsWith('.git') || pkg.version.match(/\.git#.+/);
-          let displayVersion = pkg.version;
-          if (isGitUrl && pkg.version.includes('#')) {
-            const versionParts = pkg.version.split('#');
-            displayVersion = `Current Version ${versionParts[1]}`;
-          }
-          return `
-            <li class="listing-box">
-              <div class="info-icons-group">
-                ${isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
-              </div>
-              <div class="info">
-                <h3>
-                  ${pkg.name}
-                  <span class="latest-version">(${pkg.version})</span>
-                  ${isGitUrl && pkg.version.includes('#') ? `<span class="current-version">${displayVersion}</span>` : ''}
-                </h3>
-              </div>
-            </li>
-          `;
-        }).join('') : '<li>No packages installed</li>'}
-      </ul>
-      <button id="openProjectButton" class="open-button">Open Project</button>
-    `;
-    projectInfo.classList.remove('center-text');
-
-    // Check if the Unity version exists in the stored versions
-    const unityVersions = await ipcRenderer.invoke('get-unity-versions');
-    const openProjectButton = document.getElementById('openProjectButton');
-    const unityVersionWarning = document.getElementById('unity-version-warning');
-    const goToUnityVersionsButton = document.getElementById('goToUnityVersionsButton');
-
-    if (!unityVersionExists(unityVersion, unityVersions)) {
-      openProjectButton.disabled = true;
-      openProjectButton.style.display = 'none'; // Hide the button
-      openProjectButton.style.backgroundColor = '#888888'; // Gray out the button
-      unityVersionWarning.style.display = 'block'; // Show the warning banner
-    } else {
-      openProjectButton.disabled = false;
-      openProjectButton.style.display = 'block'; // Show the button
-      openProjectButton.style.backgroundColor = ''; // Reset the button color
-      unityVersionWarning.style.display = 'none'; // Hide the warning banner
-    }
-
-    // Add event listener for the open project button
-    openProjectButton.addEventListener('click', () => {
-      ipcRenderer.send('open-project', selectedProjectPath);
-    });
-
-    // Add event listener for the "Go to Unity Versions" button
-    goToUnityVersionsButton.addEventListener('click', () => {
-      document.querySelector('.tab[data-tab="unity-versions"]').click();
-    });
-
-  } else {
-    projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
-    projectInfo.classList.add('center-text');
-  }
+  await refreshProjectInfo();
 });
 
 // Retrieve stored URLs and projects on load
@@ -382,17 +287,36 @@ async function refreshProjectInfo() {
     }
 
     const packagesManifestPath = path.join(selectedProjectPath, 'Packages', 'manifest.json');
+    const vpmManifestPath = path.join(selectedProjectPath, 'Packages', 'vpm-manifest.json');
     let packages = [];
+
     if (fs.existsSync(packagesManifestPath)) {
+      console.log('Found Packages manifest file');
       const manifestContent = fs.readFileSync(packagesManifestPath, 'utf8');
       const manifestJson = JSON.parse(manifestContent);
       packages = Object.keys(manifestJson.dependencies).map(pkgName => ({
         name: pkgName,
         version: manifestJson.dependencies[pkgName],
-        isDefault: pkgName.startsWith('com.unity')
+        isDefault: pkgName.startsWith('com.unity'),
+        isGitUrl: manifestJson.dependencies[pkgName].endsWith('.git') || manifestJson.dependencies[pkgName].match(/\.git#.+/)
       }));
     }
 
+    if (fs.existsSync(vpmManifestPath)) {
+      console.log('Found VPM manifest file');
+      const vpmContent = fs.readFileSync(vpmManifestPath, 'utf8');
+      const vpmJson = JSON.parse(vpmContent);
+      const vpmPackages = Object.keys(vpmJson.locked).map(pkgName => ({
+        name: pkgName,
+        version: vpmJson.locked[pkgName].version,
+        isDefault: false,
+        isGitUrl: false, // VPM packages are never Git repositories
+        isVpmPackage: true // Mark as VPM package
+      }));
+      packages = packages.concat(vpmPackages);
+    }
+
+    // Filter out com.unity packages
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
     projectInfo.innerHTML = `
       <div id="unity-version-warning" class="warning-banner" style="display: none;">
@@ -403,13 +327,29 @@ async function refreshProjectInfo() {
       <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
       <h4>Installed Packages:</h4>
       <ul id="installed-packages">
-        ${filteredPackages.length ? filteredPackages.map(pkg => `
-          <li class="listing-box">
-            <div class="info">
-              <h3>${pkg.name} <span class="latest-version">(${pkg.version}) </span></h3>
-            </div>
-          </li>
-        `).join('') : '<li>No packages installed</li>'}
+        ${filteredPackages.length ? filteredPackages.map(pkg => {
+          let displayVersion = pkg.version;
+          if (pkg.isGitUrl && pkg.version.includes('#')) {
+            const versionParts = pkg.version.split('#');
+            displayVersion = `Current Version ${versionParts[1]}`;
+          }
+          if (pkg.isVpmPackage) {
+            displayVersion = `Current Version ${pkg.version}`;
+          }
+          return `
+            <li class="listing-box">
+              <div class="info-icons-group">
+                ${pkg.isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
+                ${pkg.isVpmPackage ? '<img src="../src/images/vcc-logo.png" alt="VCC Logo" class="vcc-logo">' : ''}
+              </div>
+              <div class="info">
+                <h3>${pkg.name}</h3>
+                ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` :``}
+              </div>
+              ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
+            </li>
+          `;
+        }).join('') : '<li>No packages installed</li>'}
       </ul>
       <button id="openProjectButton" class="open-button">Open Project</button>
     `;
@@ -421,15 +361,11 @@ async function refreshProjectInfo() {
     const goToUnityVersionsButton = document.getElementById('goToUnityVersionsButton');
 
     if (!unityVersionExists(unityVersion, unityVersions)) {
-      openProjectButton.disabled = true;
-      openProjectButton.style.display = 'none';
-      openProjectButton.style.backgroundColor = '#888888';
       unityVersionWarning.style.display = 'block';
+      openProjectButton.disabled = true;
     } else {
-      openProjectButton.disabled = false;
-      openProjectButton.style.display = 'block';
-      openProjectButton.style.backgroundColor = '';
       unityVersionWarning.style.display = 'none';
+      openProjectButton.disabled = false;
     }
 
     openProjectButton.addEventListener('click', () => {

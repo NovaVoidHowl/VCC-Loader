@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
       --common-margin-left: 1%;
       --common-margin-right: 1%;
       --common-position: relative;
+      --common-package-logo-height: 1em;
     }
 
     * {
@@ -20,15 +22,20 @@
       font-family: Arial, sans-serif;
       background-color: #121212;
       color: #ffffff;
-      margin: 0; /* Remove default margin */
-      overflow-x: hidden; /* Prevent horizontal overflow */
+      margin: 0;
+      /* Remove default margin */
+      overflow-x: hidden;
+      /* Prevent horizontal overflow */
     }
+
     #container {
       width: 100%;
       margin-top: 1.6em;
       position: absolute;
-      box-sizing: border-box; /* Include padding and border in width */
+      box-sizing: border-box;
+      /* Include padding and border in width */
     }
+
     #container-top,
     #container-main,
     .tabs {
@@ -37,6 +44,7 @@
       margin-right: var(--common-margin-right);
       position: var(--common-position);
     }
+
     #container-top {
       padding-left: .5em;
       padding-right: .5em;
@@ -45,6 +53,7 @@
       background-color: #1e1e1e;
       border-radius: 8px;
     }
+
     #container-main {
       margin-top: 0;
       padding-top: .3em;
@@ -54,6 +63,7 @@
       background-color: #1e1e1e;
       border-radius: 0 0 8px 8px;
     }
+
     .input-group {
       position: relative;
       display: flex;
@@ -62,11 +72,14 @@
       margin-left: var(--common-margin-left);
       margin-right: var(--common-margin-right);
     }
-    #url, #projectPath, #projectDropdown {
+
+    #url,
+    #projectPath,
+    #projectDropdown {
       flex: 1;
     }
 
-    .input_field{
+    .input_field {
       padding: 10px;
       background-color: #333333;
       color: #ffffff;
@@ -75,10 +88,13 @@
       margin-right: 10px;
     }
 
-    #saveUrlButton, #addProjectButton {
+    #saveUrlButton,
+    #addProjectButton {
       cursor: pointer;
     }
-    #storedUrlsList, #storedProjectsList {
+
+    #storedUrlsList,
+    #storedProjectsList {
       width: var(--common-width);
       margin-left: auto;
       margin-right: auto;
@@ -89,16 +105,21 @@
       padding: 10px;
       position: relative;
     }
-    #storedUrlsList li, #storedProjectsList li {
+
+    #storedUrlsList li,
+    #storedProjectsList li {
       padding: 5px;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    #storedUrlsList li.selected, #storedProjectsList li.selected {
+
+    #storedUrlsList li.selected,
+    #storedProjectsList li.selected {
       background-color: #555555;
     }
+
     .listing-box {
       border: 1px solid #444444;
       padding: 10px;
@@ -108,23 +129,28 @@
       justify-content: space-between;
       align-items: center;
     }
+
     .listing-box .info {
       display: flex;
       flex-direction: column;
       flex: 1;
     }
+
     .listing-box h3 {
       margin: 0;
       font-size: 1em;
     }
+
     .listing-box p {
       margin: 5px 0;
       font-size: .8em;
     }
+
     .listing-box .latest-version {
       font-size: 0.8em;
       color: #aaaaaa;
     }
+
     .version-dropdown {
       background-color: #333333;
       color: #ffffff;
@@ -132,8 +158,10 @@
       border-radius: 4px;
       padding: 5px;
     }
+
     .remove-button {
-      background-color: #ff4444; /* Red background */
+      background-color: #ff4444;
+      /* Red background */
       color: #ffffff;
       border: none;
       border-radius: 4px;
@@ -141,9 +169,12 @@
       cursor: pointer;
       margin-right: 10px;
     }
+
     .remove-button:hover {
-      background-color: #ff6666; /* Lighter red on hover */
+      background-color: #ff6666;
+      /* Lighter red on hover */
     }
+
     #app-version-bubble {
       position: absolute;
       top: 0em;
@@ -154,6 +185,7 @@
       border-radius: 0 0 0 .4em;
       font-size: 0.6em;
     }
+
     .tabs {
       display: flex;
       padding-left: .5em;
@@ -162,28 +194,36 @@
       padding-top: .5em;
       padding-bottom: .5em;
       border-radius: 8px 8px 0 0;
-      margin-bottom: 0; /* Remove bottom margin */
+      margin-bottom: 0;
+      /* Remove bottom margin */
       background-color: #1e1e1e;
     }
+
     .tab {
-      flex: 1; /* Distribute space equally */
+      flex: 1;
+      /* Distribute space equally */
       padding: 10px 20px;
       background-color: #333333;
       color: #ffffff;
       border: 1px solid #444444;
       border-radius: 4px 4px 0 0;
       cursor: pointer;
-      text-align: center; /* Center text */
+      text-align: center;
+      /* Center text */
     }
+
     .tab.active {
       background-color: #444444;
     }
+
     .tab-content {
       display: none;
     }
+
     .tab-content.active {
       display: block;
     }
+
     #project-info-container {
       position: relative;
       margin-left: var(--common-margin-left);
@@ -195,20 +235,27 @@
       border: 1px solid #444444;
       border-radius: 4px;
     }
+
     #project-info {
       position: relative;
     }
-    #project-info h3, #project-info p {
+
+    #project-info h3,
+    #project-info p {
       margin: 5px 0;
     }
+
     .center-text {
       text-align: center;
     }
 
     .open-button {
-      position: absolute; /* Change from relative to absolute */
-      top: 0; /* Adjust the top position */
-      right: .25em; /* Adjust the right position */
+      position: absolute;
+      /* Change from relative to absolute */
+      top: 0;
+      /* Adjust the top position */
+      right: .25em;
+      /* Adjust the right position */
       background-color: #4CAF50;
       color: white;
       border: none;
@@ -217,7 +264,7 @@
       font-size: 1em;
       cursor: pointer;
     }
-    
+
     .open-button:hover {
       background-color: #45a049;
     }
@@ -237,33 +284,50 @@
     }
 
     .warning-banner {
-    background-color: #ffcc00;
-    color: #000000;
-    padding: 10px;
-    border-radius: 4px;
-    margin-top: 10px;
-    text-align: center;
-  }
+      background-color: #ffcc00;
+      color: #000000;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      text-align: center;
+    }
 
-  .git-logo {
-    width: 16px;
-    height: 16px;
-    margin-left: 5px;
-    vertical-align: middle;
-  }
-  .info-icons-group { 
-    padding-right: 1em;
-    display: inline-block;
-  }
+    .git-logo {
+      width: 16px;
+      height: var(--common-package-logo-height);
+      margin-left: 5px;
+      vertical-align: middle;
+    }
 
-  .current-version {
-    float: right;
-    margin-left: 10px;
-    font-weight: bold;
-    color: #888;
-  }
+    .info-icons-group {
+      padding-right: 1em;
+      display: inline-block;
+      width: 4em;
+      /* align content to center */
+      display: flex;
+      justify-content: center;
+    }
+
+    .current-version {
+      margin-left: 10px;
+      font-weight: bold;
+      color: #888;
+      position: relative;
+      right: 1%;
+      top: 50%;
+      font-size: .8em;
+      /* transform: translateY(-100%); */
+    }
+
+    .vcc-logo {
+      padding: .1em;
+      height: var(--common-package-logo-height);
+      margin-left: 5px;
+      vertical-align: middle;
+    }
   </style>
 </head>
+
 <body>
   <div id="app-version-bubble">Version: <span id="app-version"></span></div>
   <div id="container">
@@ -318,4 +382,5 @@
   </div>
   <script src="renderer.js"></script>
 </body>
+
 </html>
