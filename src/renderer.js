@@ -6,6 +6,7 @@ const semver = require('semver');
 const urlInput = document.getElementById('url');
 const saveUrlButton = document.getElementById('saveUrlButton');
 const storedUrlsList = document.getElementById('storedUrlsList');
+const availableVCCPackages = document.getElementById('projectVCC');
 const addProjectButton = document.getElementById('addProjectButton');
 const storedProjectsList = document.getElementById('storedProjectsList');
 const appVersionElement = document.getElementById('app-version');
@@ -21,8 +22,14 @@ const unityVersionInput = document.getElementById('unityVersion');
 const unityPathInput = document.getElementById('unityPath');
 const addUnityVersionButton = document.getElementById('addUnityVersionButton');
 const storedUnityVersionsList = document.getElementById('storedUnityVersionsList');
+const vccListingsTab = document.querySelector('.tab[data-tab="vcc-listings"]');
 
 let projects = []; // Global variable to store projects
+
+vccListingsTab.addEventListener('click', () => {
+  console.log('vccListingsTab clicked'); // Debugging statement
+  ipcRenderer.send('get-vcc-urls');
+});
 
 // Request the version number from the main process on load
 ipcRenderer.send('request-version');
@@ -51,11 +58,13 @@ ipcRenderer.on('deeplinking-url', (event, url) => {
 });
 
 ipcRenderer.on('url-saved', (event, urls) => {
-  displayStoredUrls(urls, storedUrlsList);
+  console.log('URL saved event received:', urls); // Debugging statement
+  displayStoredUrls(urls, storedUrlsList, 'vcc-listings');
 });
 
 ipcRenderer.on('urls', (event, urls) => {
-  displayStoredUrls(urls, storedUrlsList);
+  console.log('URLs event received:', urls); // Debugging statement
+  displayStoredUrls(urls, storedUrlsList, 'vcc-listings');
 });
 
 ipcRenderer.on('project-saved', (event, projects) => {
@@ -109,8 +118,36 @@ tabs.forEach(tab => {
   });
 });
 
-async function displayStoredUrls(urls, targetElement) {
+async function displayStoredUrls(urls, targetElement, mode) {
+  console.log('Displaying stored URLs:', urls); // Debugging statement
+  console.log('Mode:', mode); // Debugging statement
+
+  // if mode is 'none' then clear the target element
+  if (mode === 'none') {
+    targetElement.innerHTML = '';
+    return;
+  }
+
+  const parentElement = targetElement; // set up the parent element (as we are going to get a new target element)
+
+  // if mode is 'unity-project' then add a title to the list
+  if (mode === 'unity-project') {
+    parentElement.innerHTML = '';
+    const title = document.createElement('div');
+    title.classList.add('package-title');
+    title.innerHTML = `
+        <h4>Available VCC Packages</h4>
+        <ul id="availableVCCPackages"></ul>
+    `;
+    parentElement.appendChild(title, parentElement.firstChild);
+
+    // set  the target element for the rest of the function to the availableVCCPackages element
+    targetElement = document.getElementById('availableVCCPackages');
+  }
+
+
   targetElement.innerHTML = '';
+
   for (const url of urls) {
     try {
       console.log(`Fetching URL: ${url}`);
@@ -132,14 +169,15 @@ async function displayStoredUrls(urls, targetElement) {
           const li = document.createElement('li');
           li.classList.add('listing-box');
           li.innerHTML = `
-            ${isFirstPackage ? '<button class="remove-button">X</button>' : '<div class="spacer"></div>'}
+            ${(isFirstPackage && mode === 'vcc-listings') ? '<button class="remove-button">X</button>' : (mode === 'unity-project' ? '' : '<div class="spacer"></div>')}
             <div class="info">
               <h3>${packageName} <span class="latest-version">${latestVersion ? `(Latest version ${latestVersion})` : ''}</span></h3>
               <p>${url}</p>
             </div>
-            ${versions.length ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
+            ${(versions.length && mode === 'unity-project') ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
           `;
-          if (isFirstPackage) {
+          console.log('isFirstPackage:', isFirstPackage); // Debugging statement
+          if (isFirstPackage && mode === 'vcc-listings') {
             li.querySelector('.remove-button').addEventListener('click', () => {
               const packageList = packageNames.join(', ');
               if (confirm(`Are you sure you want to remove this listing? This will remove the following packages: ${packageList}`)) {
@@ -176,9 +214,11 @@ async function displayStoredUrls(urls, targetElement) {
   }
 }
 
+
 // Listen for the 'url-removed' event to update the UI
 ipcRenderer.on('url-removed', (event, urls) => {
-  displayStoredUrls(urls, storedUrlsList);
+  console.log('URL removed event received:', urls); // Debugging statement
+  displayStoredUrls(urls, storedUrlsList, 'vcc-listings');
 });
 
 function displayStoredProjects(projects) {
@@ -235,7 +275,7 @@ projectDropdown.addEventListener('change', async (event) => {
 });
 
 // Retrieve stored URLs and projects on load
-ipcRenderer.send('get-urls');
+ipcRenderer.send('get-vcc-urls');
 ipcRenderer.send('get-projects');
 
 // Set initial info section text
@@ -414,6 +454,11 @@ async function refreshProjectInfo() {
       <button id="openProjectButton" class="open-button">Open Project</button>
     `;
     projectInfo.classList.remove('center-text');
+
+    // Retrieve URLs
+    const urls = await ipcRenderer.invoke('get-vcc-urls');
+    console.log('Retrieved URLs in refreshProjectInfo:', urls); // Debugging statement
+    displayStoredUrls(urls, availableVCCPackages, 'unity-project');
 
     const unityVersions = await ipcRenderer.invoke('get-unity-versions');
     const openProjectButton = document.getElementById('openProjectButton');

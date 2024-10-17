@@ -100,13 +100,25 @@ if (!gotTheLock) {
     }
   });
 
-  ipcMain.on('get-urls', async (event) => {
+  async function getUrls() {
     try {
       const urls = await storage.getItem('urls') || [];
-      event.reply('urls', urls);
+      return urls;
     } catch (error) {
       console.error('Failed to get URLs:', error);
+      throw error;
     }
+  }
+  
+  ipcMain.on('get-vcc-urls', async (event) => {
+    console.log('Received get-vcc-urls event'); // Debugging statement
+    const urls = await getUrls();
+    event.reply('urls', urls);
+  });
+  
+  ipcMain.handle('get-vcc-urls', async () => {
+    console.log('Received get-vcc-urls handle'); // Debugging statement
+    return await getUrls();
   });
 
   ipcMain.on('delete-url', async (event, url) => {

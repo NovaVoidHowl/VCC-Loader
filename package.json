@@ -1,7 +1,7 @@
 {
   "name": "vcc-loader",
   "productName": "VCC Loader",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "main": "src/main.js",
   "author": "NovaVoidHowl",
   "description": "",
