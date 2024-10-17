@@ -375,6 +375,13 @@ async function refreshProjectInfo() {
       }
     });
 
+    // check all vcc packages and add if there is no listing url set the url to 'Unknown VCC Listing'
+    packages.forEach(pkg => {
+      if (pkg.isVpmPackage && !pkg.listingUrl) {
+        pkg.listingUrl = 'Unknown VCC Listing';
+      }
+    });
+
     // Filter out com.unity packages
     const filteredPackages = packages.filter(pkg => !pkg.isDefault);
     projectInfo.innerHTML = `
@@ -386,34 +393,22 @@ async function refreshProjectInfo() {
       <p>Unity Version: <span id="unity-version">${unityVersion}</span></p>
       <h4>Installed Packages:</h4>
       <ul id="installed-packages">
-        ${filteredPackages.length ? filteredPackages.map(pkg => {
-      let displayVersion = pkg.version;
-      if (pkg.isGitUrl && pkg.version.includes('#')) {
-        const versionParts = pkg.version.split('#');
-        displayVersion = `Current Version ${versionParts[1]}`;
-      }
-      if (pkg.isVpmPackage) {
-        displayVersion = `Current Version ${pkg.version}`;
-      }
-      if (pkg.isFolderPackage) {
-        displayVersion = `Current Version ${pkg.version}`;
-      }
-      return `
-            <li class="listing-box">
-              <div class="info-icons-group">
-                ${pkg.isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
-                ${pkg.isVpmPackage ? '<img src="../src/images/vcc-logo.png" alt="VCC Logo" class="vcc-logo">' : ''}
-                ${pkg.isFolderPackage ? '<img src="../src/images/folder.svg" alt="Folder Icon" class="folder-icon">' : ''}
-              </div>
-              <div class="info">
-                <h3>${pkg.name}</h3>
-                ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` : ``}
-                ${(pkg.listingUrl) ? `<p class="latest-version">${pkg.listingUrl}</p>` : ``}
-              </div>
-              ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${displayVersion}</div>` : ''}
-            </li>
-          `;
-    }).join('') : '<li>No packages installed</li>'}
+        ${filteredPackages.length ? filteredPackages.map(pkg => `
+          <li class="listing-box">
+            <div class="info-icons-group">
+              ${pkg.isGitUrl ? '<img src="../src/images/Git-Icon-White.svg" alt="Git Logo" class="git-logo">' : ''}
+              ${pkg.isVpmPackage ? '<img src="../src/images/vcc-logo.png" alt="VCC Logo" class="vcc-logo">' : ''}
+              ${pkg.isFolderPackage ? '<img src="../src/images/folder.svg" alt="Folder Icon" class="folder-icon">' : ''}
+            </div>
+            <div class="info">
+              <h3>${pkg.name}</h3>
+              ${(pkg.isGitUrl) ? `<span class="latest-version">(${pkg.version})</span>` : ``}
+              ${(pkg.listingUrl) ? `<p class="latest-version">${pkg.listingUrl}</p>` : ``}
+            </div>
+            ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${pkg.version}</div>` : ''}
+            ${pkg.listingUrl && !pkg.isVpmPackage ? `<button class="vcc-listing-relink-button" data-package='${JSON.stringify(pkg)}'>Link to listing</button>` : ''}
+          </li>
+        `).join('') : '<li>No packages installed</li>'}
       </ul>
       <button id="openProjectButton" class="open-button">Open Project</button>
     `;
@@ -439,9 +434,33 @@ async function refreshProjectInfo() {
     goToUnityVersionsButton.addEventListener('click', () => {
       document.querySelector('.tab[data-tab="unity-versions"]').click();
     });
+
+    // Add event listeners to "Link to listing" buttons
+    document.querySelectorAll('.vcc-listing-relink-button').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const pkg = JSON.parse(event.target.getAttribute('data-package'));
+        await linkToListing(selectedProjectPath, pkg);
+        await refreshProjectInfo(); // Refresh the project info section
+      });
+    });
   } else {
     projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
     projectInfo.classList.add('center-text');
+  }
+}
+
+async function linkToListing(projectPath, pkg) {
+  const vpmManifestPath = path.join(projectPath, 'Packages', 'vpm-manifest.json');
+  if (fs.existsSync(vpmManifestPath)) {
+    const vpmManifestContent = fs.readFileSync(vpmManifestPath, 'utf8');
+    const vpmManifestJson = JSON.parse(vpmManifestContent);
+
+    // Add package to dependencies and locked sections
+    vpmManifestJson.dependencies[pkg.name] = { version: pkg.version };
+    vpmManifestJson.locked[pkg.name] = { version: pkg.version, dependencies: {} };
+
+    // Write updated content back to vpm-manifest.json
+    fs.writeFileSync(vpmManifestPath, JSON.stringify(vpmManifestJson, null, 2), 'utf8');
   }
 }
 
