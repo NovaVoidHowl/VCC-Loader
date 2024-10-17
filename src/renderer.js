@@ -407,6 +407,7 @@ async function refreshProjectInfo() {
             </div>
             ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${pkg.version}</div>` : ''}
             ${pkg.listingUrl && !pkg.isVpmPackage ? `<button class="vcc-listing-relink-button" data-package='${JSON.stringify(pkg)}'>Link to listing</button>` : ''}
+            ${pkg.isVpmPackage ? `<button class="vcc-package-remove-button" data-package='${JSON.stringify(pkg)}'>Remove<br/>Package</button>` : ''}
           </li>
         `).join('') : '<li>No packages installed</li>'}
       </ul>
@@ -443,9 +444,42 @@ async function refreshProjectInfo() {
         await refreshProjectInfo(); // Refresh the project info section
       });
     });
+
+    // Add event listeners to "Remove" buttons
+    document.querySelectorAll('.vcc-package-remove-button').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const pkg = JSON.parse(event.target.getAttribute('data-package'));
+        await removeVccPackage(selectedProjectPath, pkg);
+        await refreshProjectInfo(); // Refresh the project info section
+      });
+    });
   } else {
     projectInfo.innerHTML = '<p class="center-text">Please select a project</p>';
     projectInfo.classList.add('center-text');
+  }
+}
+
+async function removeVccPackage(projectPath, pkg) {
+  const vpmManifestPath = path.join(projectPath, 'Packages', 'vpm-manifest.json');
+  if (fs.existsSync(vpmManifestPath)) {
+    const vpmManifestContent = fs.readFileSync(vpmManifestPath, 'utf8');
+    const vpmManifestJson = JSON.parse(vpmManifestContent);
+
+    // Remove package from dependencies and locked sections
+    delete vpmManifestJson.dependencies[pkg.name];
+    delete vpmManifestJson.locked[pkg.name];
+
+    // Write updated content back to vpm-manifest.json
+    fs.writeFileSync(vpmManifestPath, JSON.stringify(vpmManifestJson, null, 2), 'utf8');
+
+    // Remove the related folder in the Packages directory
+    const packageFolderPath = path.join(projectPath, 'Packages', pkg.name);
+    if (fs.existsSync(packageFolderPath)) {
+      fs.rmSync(packageFolderPath, { recursive: true, force: true });
+    }
+
+    // Show notification banner
+    showNotificationBanner('Package removed successfully!', '#4CAF50', 3000);
   }
 }
 
@@ -491,3 +525,43 @@ ipcRenderer.on('unity-versions', (event, unityVersions) => {
   // Refresh the project info section
   refreshProjectInfo();
 });
+
+function showNotificationBanner(message, color = '#4CAF50', duration = 3000) {
+  const banner = document.getElementById('notification-banner');
+  banner.textContent = message;
+  banner.style.borderColor = color;
+  banner.style.backgroundColor = '#333333'; // Ensure background color is set
+  banner.classList.add('show');
+
+  // Create a keyframe animation for the border fade-out effect
+  const fadeOutKeyframes = `
+    @keyframes borderFadeOut {
+      0% {
+        border-color: ${color};
+      }
+      100% {
+        border-color: rgba(${hexToRgb(color)}, 0); /* Fully transparent */
+      }
+    }
+  `;
+
+  // Append the keyframes to the document's style
+  const styleSheet = document.styleSheets[0];
+  styleSheet.insertRule(fadeOutKeyframes, styleSheet.cssRules.length);
+
+  // Apply the animation to the banner
+  banner.style.animation = `borderFadeOut ${duration}ms forwards`;
+
+  setTimeout(() => {
+    banner.classList.remove('show');
+  }, duration); // Hide after the specified duration
+}
+
+// Helper function to convert hex color to RGB
+function hexToRgb(hex) {
+  const bigint = parseInt(hex.slice(1), 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `${r}, ${g}, ${b}`;
+}

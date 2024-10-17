@@ -162,6 +162,7 @@
       padding: 5px;
     }
 
+    .vcc-package-remove-button,
     .remove-button {
       background-color: #ff4444;
       /* Red background */
@@ -170,12 +171,19 @@
       border-radius: 4px;
       padding: 5px 10px;
       cursor: pointer;
-      margin-right: 10px;
     }
-
+    .vcc-package-remove-button:hover,
     .remove-button:hover {
       background-color: #ff6666;
       /* Lighter red on hover */
+    }
+
+    .remove-button {
+      margin-right: 1em;
+      margin-left: .6em;
+    }
+    .vcc-package-remove-button {
+      margin-left: 1em;
     }
 
     #app-version-bubble {
@@ -338,9 +346,33 @@
     }
 
     .spacer {
-      width: 2.6em;
+      width: 3.2em;
       /* Adjust width to match the remove button */
       display: inline-block;
+    }
+
+    .notification-banner {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      color: white;
+      text-align: center;
+      padding: 1em;
+      font-size: 1em;
+      z-index: 1000;
+      border-radius: 1em 1em 0 0;
+      border-style: solid;
+      border-width: .3em 0em 0em 0em;
+      background-color: #333333;
+      transition: transform 0.3s ease-in-out; /* Add transition for smooth appearance */
+      transform: translateY(100%); /* Start off-screen */
+    }
+    
+    .notification-banner.show {
+      display: block;
+      transform: translateY(0); /* Slide into view */
     }
   </style>
 </head>
@@ -397,6 +429,7 @@
       </div>
     </div>
   </div>
+  <div id="notification-banner" class="notification-banner">Notification Content</div>
   <script src="renderer.js"></script>
 </body>
 
