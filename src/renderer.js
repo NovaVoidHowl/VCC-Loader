@@ -51,11 +51,11 @@ ipcRenderer.on('deeplinking-url', (event, url) => {
 });
 
 ipcRenderer.on('url-saved', (event, urls) => {
-  displayStoredUrls(urls);
+  displayStoredUrls(urls, storedUrlsList);
 });
 
 ipcRenderer.on('urls', (event, urls) => {
-  displayStoredUrls(urls);
+  displayStoredUrls(urls, storedUrlsList);
 });
 
 ipcRenderer.on('project-saved', (event, projects) => {
@@ -109,8 +109,8 @@ tabs.forEach(tab => {
   });
 });
 
-async function displayStoredUrls(urls) {
-  storedUrlsList.innerHTML = '';
+async function displayStoredUrls(urls, targetElement) {
+  targetElement.innerHTML = '';
   for (const url of urls) {
     try {
       console.log(`Fetching URL: ${url}`);
@@ -150,7 +150,7 @@ async function displayStoredUrls(urls) {
             });
             isFirstPackage = false;
           }
-          storedUrlsList.appendChild(li);
+          targetElement.appendChild(li);
         }
       } else {
         throw new Error('No packages found in the listing');
@@ -171,14 +171,14 @@ async function displayStoredUrls(urls) {
           ipcRenderer.send('delete-url', url);
         }
       });
-      storedUrlsList.appendChild(li);
+      targetElement.appendChild(li);
     }
   }
 }
 
 // Listen for the 'url-removed' event to update the UI
 ipcRenderer.on('url-removed', (event, urls) => {
-  displayStoredUrls(urls);
+  displayStoredUrls(urls, storedUrlsList);
 });
 
 function displayStoredProjects(projects) {
