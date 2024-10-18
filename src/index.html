@@ -12,6 +12,7 @@
       --common-margin-right: 1%;
       --common-position: relative;
       --common-package-logo-height: 1em;
+      --common-button-radius: .5em;
     }
 
     * {
@@ -158,9 +159,23 @@
       background-color: #333333;
       color: #ffffff;
       border: 1px solid #444444;
-      border-radius: 4px;
-      padding: 5px;
+      border-radius: var(--common-button-radius) 0 0 var(--common-button-radius);
+      height: 2.4em !important;
     }
+
+    .add-button {
+      border-radius: var(--common-button-radius);
+      height: 2.4em !important;
+      margin-left: 0 !important;
+      
+    }
+
+    .add-button.project-info-add-button{
+      border-radius: 0 var(--common-button-radius) var(--common-button-radius) 0 !important;
+      padding-right: 1em;
+      padding-left: 1em;
+    }
+
 
     .vcc-package-remove-button,
     .remove-button {
@@ -168,10 +183,11 @@
       /* Red background */
       color: #ffffff;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--common-button-radius);
       padding: 5px 10px;
       cursor: pointer;
     }
+
     .vcc-package-remove-button:hover,
     .remove-button:hover {
       background-color: #ff6666;
@@ -182,8 +198,40 @@
       margin-right: 1em;
       margin-left: .6em;
     }
-    .vcc-package-remove-button {
-      margin-left: 1em;
+
+    .button-group {
+      display: flex;
+    }
+
+    .button-group .remove-button {
+      border-radius: var(--common-button-radius);
+      padding-left: .4em !important;
+      padding-right: .4em !important;
+      padding-top: auto !important;
+      padding-bottom: auto !important;
+      height: 3.5em !important;
+      margin: 0em !important;
+    }
+
+    .button-group .upgrade-button {
+      border-radius: var(--common-button-radius);
+      padding-left: .4em !important;
+      padding-right: .4em !important;
+      padding-top: auto !important;
+      padding-bottom: auto !important;
+      height: 3.5em !important;
+      margin: 0em !important;
+
+    }
+
+    .button-group.has-upgrade .remove-button {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .button-group.has-upgrade .upgrade-button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
     }
 
     #app-version-bubble {
@@ -271,7 +319,7 @@
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--common-button-radius);
       padding: .5em;
       font-size: 1em;
       cursor: pointer;
@@ -282,17 +330,21 @@
     }
 
     .vcc-listing-relink-button,
+    .vcc-package-upgrade-button,
     .add-button {
-      padding: .8em;
+      padding-top: .4em;
+      padding-bottom: .4em;
       margin: 5px;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--common-button-radius);
       cursor: pointer;
     }
 
+
     .vcc-listing-relink-button:hover,
+    .vcc-package-upgrade-button:hover,
     .add-button:hover {
       background-color: #45a049;
     }
@@ -367,13 +419,16 @@
       border-style: solid;
       border-width: .3em 0em 0em 0em;
       background-color: #333333;
-      transition: transform 0.3s ease-in-out; /* Add transition for smooth appearance */
-      transform: translateY(100%); /* Start off-screen */
+      transition: transform 0.3s ease-in-out;
+      /* Add transition for smooth appearance */
+      transform: translateY(100%);
+      /* Start off-screen */
     }
-    
+
     .notification-banner.show {
       display: block;
-      transform: translateY(0); /* Slide into view */
+      transform: translateY(0);
+      /* Slide into view */
     }
   </style>
 </head>
@@ -409,7 +464,7 @@
             <ul id="availableVCCPackages"></ul>
           </div>
         </div>
-      
+
       </div>
       <div id="vcc-listings" class="tab-content">
         <div class="input-group">

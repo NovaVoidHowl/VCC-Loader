@@ -185,7 +185,7 @@ async function displayStoredUrls(urls, targetElement, mode) {
               <p>${url}</p>
             </div>
             ${(versions.length && mode === 'unity-project') ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
-            ${(mode === 'unity-project') ? `<button class="add-button" data-package='${JSON.stringify({ name: packageName, url, versions })}'>Add</button>` : ''}
+            ${(mode === 'unity-project') ? `<button class="add-button project-info-add-button" data-package='${JSON.stringify({ name: packageName, url, versions })}'>Add</button>` : ''}
           `;
           console.log('isFirstPackage:', isFirstPackage); // Debugging statement
           if (isFirstPackage && mode === 'vcc-listings') {
@@ -433,13 +433,16 @@ async function refreshProjectInfo() {
     // Retrieve VCC listings info
     const vccListings = await ipcRenderer.invoke('get-vcc-listings');
 
-    // Match package names with VCC listings to get URLs
-    packages.forEach(pkg => {
+    // Match package names with VCC listings to get URLs and latest versions
+    for (const pkg of packages) {
       const matchingListing = vccListings.find(listing => listing.name === pkg.name);
       if (matchingListing) {
         pkg.listingUrl = matchingListing.url;
+        const vccData = await fetch(matchingListing.url).then(res => res.json());
+        const latestVersion = Object.keys(vccData.packages[pkg.name].versions).sort(semver.rcompare)[0];
+        pkg.latestVersion = latestVersion;
       }
-    });
+    }
 
     // check all vcc packages and add if there is no listing url set the url to 'Unknown VCC Listing'
     packages.forEach(pkg => {
@@ -472,8 +475,11 @@ async function refreshProjectInfo() {
               ${(pkg.listingUrl) ? `<p class="latest-version">${pkg.listingUrl}</p>` : ``}
             </div>
             ${(pkg.isGitUrl && pkg.version.includes('#')) || pkg.isVpmPackage || pkg.isFolderPackage ? `<div class="current-version">${pkg.version}</div>` : ''}
-            ${pkg.listingUrl && !pkg.isVpmPackage ? `<button class="vcc-listing-relink-button" data-package='${JSON.stringify(pkg)}'>Link to listing</button>` : ''}
-            ${pkg.isVpmPackage ? `<button class="vcc-package-remove-button" data-package='${JSON.stringify(pkg)}'>Remove<br/>Package</button>` : ''}
+            <div class="button-group ${pkg.latestVersion && semver.lt(pkg.version, pkg.latestVersion) ? 'has-upgrade' : ''}">
+              ${pkg.listingUrl && !pkg.isVpmPackage ? `<button class="vcc-listing-relink-button" data-package='${JSON.stringify(pkg)}'>Link to listing</button>` : ''}
+              ${pkg.isVpmPackage ? `<button class="vcc-package-remove-button remove-button" data-package='${JSON.stringify(pkg)}'>Remove<br/>Package</button>` : ''}
+              ${pkg.latestVersion && semver.lt(pkg.version, pkg.latestVersion) ? `<button class="vcc-package-upgrade-button upgrade-button" data-package='${JSON.stringify(pkg)}'>Upgrade to<br/>Latest</button>` : ''}
+            </div>
           </li>
         `).join('') : '<li>No packages installed</li>'}
       </ul>
@@ -521,6 +527,15 @@ async function refreshProjectInfo() {
       button.addEventListener('click', async (event) => {
         const pkg = JSON.parse(event.target.getAttribute('data-package'));
         await removeVccPackage(selectedProjectPath, pkg);
+        await refreshProjectInfo(); // Refresh the project info section
+      });
+    });
+
+    // Add event listeners to "Upgrade to Latest" buttons
+    document.querySelectorAll('.vcc-package-upgrade-button').forEach(button => {
+      button.addEventListener('click', async (event) => {
+        const pkg = JSON.parse(event.target.getAttribute('data-package'));
+        await addVccPackage(selectedProjectPath, pkg.name, pkg.latestVersion, pkg.listingUrl);
         await refreshProjectInfo(); // Refresh the project info section
       });
     });
