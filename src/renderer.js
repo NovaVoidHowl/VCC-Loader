@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const semver = require('semver');
+const AdmZip = require('adm-zip');
 
 const urlInput = document.getElementById('url');
 const saveUrlButton = document.getElementById('saveUrlButton');
@@ -145,13 +146,22 @@ async function displayStoredUrls(urls, targetElement, mode) {
     targetElement = document.getElementById('availableVCCPackages');
   }
 
-
   targetElement.innerHTML = '';
 
   for (const url of urls) {
     try {
       console.log(`Fetching URL: ${url}`);
-      const response = await fetch(url);
+      let response;
+      try {
+        response = await fetch(url);
+        console.log('Response:', response); // Debugging statement
+        if (!response || !response.ok) {
+          throw new Error(`HTTP error! status: ${response ? response.status : 'unknown'}`);
+        }
+      } catch (e) {
+        console.error('fetch failed:', e);
+        continue; // Skip to the next URL
+      }
       const data = await response.json();
       console.log(`Fetched data:`, data);
 
@@ -175,6 +185,7 @@ async function displayStoredUrls(urls, targetElement, mode) {
               <p>${url}</p>
             </div>
             ${(versions.length && mode === 'unity-project') ? `<select class="version-dropdown">${versions.map(version => `<option value="${version}">${version}</option>`).join('')}</select>` : ''}
+            ${(mode === 'unity-project') ? `<button class="add-button" data-package='${JSON.stringify({ name: packageName, url, versions })}'>Add</button>` : ''}
           `;
           console.log('isFirstPackage:', isFirstPackage); // Debugging statement
           if (isFirstPackage && mode === 'vcc-listings') {
@@ -195,6 +206,7 @@ async function displayStoredUrls(urls, targetElement, mode) {
       }
     } catch (error) {
       console.error('Failed to fetch or parse listing:', error);
+      console.error('Error stack:', error.stack); // Detailed error stack
       const li = document.createElement('li');
       li.classList.add('listing-box');
       li.innerHTML = `
@@ -207,6 +219,8 @@ async function displayStoredUrls(urls, targetElement, mode) {
       li.querySelector('.remove-button').addEventListener('click', () => {
         if (confirm('Are you sure you want to remove this listing?')) {
           ipcRenderer.send('delete-url', url);
+          // Refresh the project info section
+          refreshProjectInfo();
         }
       });
       targetElement.appendChild(li);
@@ -214,6 +228,18 @@ async function displayStoredUrls(urls, targetElement, mode) {
   }
 }
 
+document.addEventListener('click', async (event) => {
+  if (event.target.classList.contains('add-button')) {
+    const packageData = JSON.parse(event.target.getAttribute('data-package'));
+    const selectedVersion = event.target.previousElementSibling.value;
+    const projectPath = projectDropdown.value;
+
+    if (projectPath && selectedVersion) {
+      await addVccPackage(projectPath, packageData.name, selectedVersion, packageData.url);
+      await refreshProjectInfo();
+    }
+  }
+});
 
 // Listen for the 'url-removed' event to update the UI
 ipcRenderer.on('url-removed', (event, urls) => {
@@ -504,6 +530,73 @@ async function refreshProjectInfo() {
   }
 }
 
+async function addVccPackage(projectPath, packageName, version, url) {
+  const vpmManifestPath = path.join(projectPath, 'Packages', 'vpm-manifest.json');
+  const packageFolderPath = path.join(projectPath, 'Packages', packageName);
+
+  showNotificationBanner('Adding package to manifest...', '#003366', 0);
+
+  // Update vpm-manifest.json
+  if (fs.existsSync(vpmManifestPath)) {
+    const vpmManifestContent = fs.readFileSync(vpmManifestPath, 'utf8');
+    const vpmManifestJson = JSON.parse(vpmManifestContent);
+
+    // Add package to dependencies and locked sections
+    vpmManifestJson.dependencies[packageName] = { version };
+    vpmManifestJson.locked[packageName] = { version, dependencies: {} };
+
+    // Write updated content back to vpm-manifest.json
+    fs.writeFileSync(vpmManifestPath, JSON.stringify(vpmManifestJson, null, 2), 'utf8');
+  }
+
+  // get vcc listing json
+  const vccResponse = await fetch(url);
+  const vccData = await vccResponse.json();
+  const packageUrl = vccData.packages[packageName].versions[version].url;
+
+  showNotificationBanner('Downloading package...', '#003366', 0);
+
+  // Download the package
+  console.log(`Downloading package from: ${packageUrl}`);
+  const response = await fetch(packageUrl);
+  if (!response.ok) {
+    showNotificationBanner('Failed to download package', '#F44336', 3000);
+    throw new Error(`Failed to download package: ${response.statusText}`);
+  }
+
+  // Get the response body as an ArrayBuffer
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // Save the buffer to a file
+  const zipFilePath = `${packageFolderPath}.zip`;
+  fs.writeFileSync(zipFilePath, buffer);
+
+  // Show notification banner
+  showNotificationBanner('Installing package...', '#003366', 0);
+
+  try {
+    // Unzip the package using adm-zip
+    const zip = new AdmZip(zipFilePath);
+    zip.extractAllTo(packageFolderPath, true);
+
+    // Remove the zip file after unzipping
+    fs.unlinkSync(zipFilePath);
+
+    // If unzip fails, show error message
+    if (!fs.existsSync(packageFolderPath)) {
+      showNotificationBanner('Failed to unzip package', '#F44336', 3000);
+      return; // Exit the function
+    }
+
+    // Show notification banner
+    showNotificationBanner('Package added successfully!', '#4CAF50', 3000);
+  } catch (error) {
+    console.error('Error during unzip process:', error);
+    showNotificationBanner('Failed to unzip package', '#F44336', 3000);
+  }
+}
+
 async function removeVccPackage(projectPath, pkg) {
   const vpmManifestPath = path.join(projectPath, 'Packages', 'vpm-manifest.json');
   if (fs.existsSync(vpmManifestPath)) {
@@ -577,6 +670,13 @@ function showNotificationBanner(message, color = '#4CAF50', duration = 3000) {
   banner.style.borderColor = color;
   banner.style.backgroundColor = '#333333'; // Ensure background color is set
   banner.classList.add('show');
+
+  if (duration === 0) {
+    // If duration is 0, set the border color to be always visible
+    banner.style.borderColor = color;
+    banner.style.animation = ''; // Remove any existing animation
+    return; // Skip the rest of the function
+  }
 
   // Create a keyframe animation for the border fade-out effect
   const fadeOutKeyframes = `
