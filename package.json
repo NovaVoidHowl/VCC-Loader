@@ -1,30 +1,37 @@
 {
-  "name": "vcc-loader",
-  "productName": "VCC Loader",
-  "version": "0.23.1",
-  "main": "src/main.js",
   "author": "NovaVoidHowl",
-  "description": "",
-  "scripts": {
-    "lint": "eslint src",
-    "clean": "rimraf dist",
-    "start": "electron .",
-    "start-vcc-test": "electron . vcc://vpm/addRepo?url=https://Adjerry91.github.io/VRCFaceTracking-Templates/index2.json",
-    "dist": "electron-builder"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NovaVoidHowl/VCC-Loader.git"
-  },
   "bugs": {
     "url": "https://github.com/NovaVoidHowl/VCC-Loader/issues"
   },
-  "homepage": "https://github.com/NovaVoidHowl/VCC-Loader#readme",
-  "devDependencies": {
-    "electron": "^32.1.2",
-    "electron-builder": "^25.1.7",
-    "eslint": "^9.12.0",
-    "rimraf": "^6.0.1"
+  "build": {
+    "appId": "com.novavoidhowl.vccloader",
+    "files": [
+      "dist/**/*",
+      "build/license.txt",
+      "src/**/*"
+    ],
+    "nsis": {
+      "allowElevation": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "include": "build/installer.nsh",
+      "oneClick": false,
+      "perMachine": true,
+      "runAfterFinish": false,
+      "shortcutName": "VCC Loader",
+      "uninstallDisplayName": "VCC Loader"
+    },
+    "win": {
+      "icon": "icons/android-chrome-512x512.png",
+      "target": [
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "nsis"
+        }
+      ]
+    }
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -34,34 +41,29 @@
     "sudo-prompt": "^9.2.1",
     "win-version-info": "^6.0.1"
   },
-  "build": {
-    "appId": "com.novavoidhowl.vccloader",
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "icons/android-chrome-512x512.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": true,
-      "allowElevation": true,
-      "createDesktopShortcut": false,
-      "createStartMenuShortcut": true,
-      "runAfterFinish": false,
-      "shortcutName": "VCC Loader",
-      "uninstallDisplayName": "VCC Loader",
-      "include": "build/installer.nsh"
-    },
-    "files": [
-      "dist/**/*",
-      "build/license.txt",
-      "src/**/*"
-    ]
-  }
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "electron": "^32.1.2",
+    "electron-builder": "^25.1.7",
+    "eslint": "^9.12.0",
+    "globals": "^15.11.0",
+    "rimraf": "^6.0.1"
+  },
+  "homepage": "https://github.com/NovaVoidHowl/VCC-Loader#readme",
+  "main": "src/main.js",
+  "name": "vcc-loader",
+  "productName": "VCC Loader",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NovaVoidHowl/VCC-Loader.git"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "dist": "electron-builder",
+    "lint": "eslint src",
+    "start": "electron .",
+    "start-vcc-test": "electron . vcc://vpm/addRepo?url=https://Adjerry91.github.io/VRCFaceTracking-Templates/index2.json"
+  },
+  "version": "0.23.2"
 }

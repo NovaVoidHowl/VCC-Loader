@@ -1,10 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const process = require('process');
 const path = require('path');
 const fs = require('fs');
 const storage = require('node-persist');
 const { exec } = require('child_process');
 const winVersionInfo = require('win-version-info');
-const semver = require('semver');
 
 let mainWindow;
 let deeplinkingUrl;
@@ -36,11 +36,11 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', (event, commandLine) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-  
+
       // Parse command-line arguments for the second instance
       commandLine.forEach(arg => {
         if (arg.startsWith('--vcc-url=')) {
@@ -51,7 +51,7 @@ if (!gotTheLock) {
           console.log(`Parsed deeplinking URL from command-line: ${deeplinkingUrl}`);
         }
       });
-  
+
       // Send the deeplink URL to the renderer process
       if (deeplinkingUrl) {
         mainWindow.webContents.send('deeplinking-url', deeplinkingUrl);
@@ -109,13 +109,13 @@ if (!gotTheLock) {
       throw error;
     }
   }
-  
+
   ipcMain.on('get-vcc-urls', async (event) => {
     console.log('Received get-vcc-urls event'); // Debugging statement
     const urls = await getUrls();
     event.reply('urls', urls);
   });
-  
+
   ipcMain.handle('get-vcc-urls', async () => {
     console.log('Received get-vcc-urls handle'); // Debugging statement
     return await getUrls();
@@ -199,7 +199,7 @@ if (!gotTheLock) {
             unityVersion = versionMatch[1];
           }
         }
-  
+
         const project = { path: projectPath, version: unityVersion };
         event.reply('project-saved', [project]);
         ipcMain.emit('save-project', event, project);
@@ -269,12 +269,12 @@ if (!gotTheLock) {
           const versionInfo = winVersionInfo(selectedFile);
         let unityVersion = versionInfo.ProductVersion;
         console.log('Unity version pre clean:', unityVersion);
-  
+
         // Remove metadata after the underscore
         if (unityVersion.includes('_')) {
           unityVersion = unityVersion.split('_')[0];
             }
-        
+
         console.log('Unity version post trim:', unityVersion);
 
         // remove any preceding or trailing whitespace

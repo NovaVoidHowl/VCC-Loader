@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const { Buffer } = require('buffer');
 const path = require('path');
 const fs = require('fs');
 const semver = require('semver');
@@ -14,7 +15,6 @@ const appVersionElement = document.getElementById('app-version');
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');
 const projectDropdown = document.getElementById('projectDropdown');
-const projectInfoContainer = document.getElementById('project-info-container');
 const projectInfo = document.getElementById('project-info');
 const projectNameElement = document.getElementById('project-name');
 const unityVersionElement = document.getElementById('unity-version');
@@ -24,8 +24,6 @@ const unityPathInput = document.getElementById('unityPath');
 const addUnityVersionButton = document.getElementById('addUnityVersionButton');
 const storedUnityVersionsList = document.getElementById('storedUnityVersionsList');
 const vccListingsTab = document.querySelector('.tab[data-tab="vcc-listings"]');
-
-let projects = []; // Global variable to store projects
 
 vccListingsTab.addEventListener('click', () => {
   console.log('vccListingsTab clicked'); // Debugging statement
@@ -504,9 +502,11 @@ async function refreshProjectInfo() {
     if (!unityVersionExists(unityVersion, unityVersions)) {
       unityVersionWarning.style.display = 'block';
       openProjectButton.disabled = true;
+      openProjectButton.style.display = 'none';
     } else {
       unityVersionWarning.style.display = 'none';
       openProjectButton.disabled = false;
+      openProjectButton.style.display = 'block';
     }
 
     openProjectButton.addEventListener('click', () => {
