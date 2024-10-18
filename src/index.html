@@ -89,6 +89,32 @@
       margin-right: 10px;
     }
 
+    .input_field.vcc-listings {
+      border-radius: var(--common-button-radius) 0 0 var(--common-button-radius);
+      margin-right: 0em !important;
+      height: 2.4em !important;
+    }
+
+    .input_field.unity-versions-left{
+      height: 2.4em !important;
+      margin-right: 0em !important;
+      border-radius: var(--common-button-radius) 0 0 var(--common-button-radius);
+    }
+    .input_field.unity-versions-middle{
+      height: 2.4em !important;
+      margin-right: 0em !important;
+      border-radius: 0 0 0 0;
+    }
+
+    .add-button.vcc-listings{
+      height: 2.4em !important;
+    }
+
+    .add-button.unity-versions-right{
+      height: 2.4em !important;
+      border-radius: 0 var(--common-button-radius) var(--common-button-radius) 0;
+    }
+
     #saveUrlButton,
     #addProjectButton {
       cursor: pointer;
@@ -170,6 +196,7 @@
       
     }
 
+    .add-button.vcc-listings,
     .add-button.project-info-add-button{
       border-radius: 0 var(--common-button-radius) var(--common-button-radius) 0 !important;
       padding-right: 1em;
@@ -461,15 +488,14 @@
             <ul id="installed-packages"></ul>
           </div>
           <div id="projectVCC" class="project-vcc">
-            <ul id="availableVCCPackages"></ul>
           </div>
         </div>
 
       </div>
       <div id="vcc-listings" class="tab-content">
         <div class="input-group">
-          <input class="input_field" type="text" id="url" placeholder="Enter VCC Listing URL">
-          <button class="add-button" id="saveUrlButton">Save Listing</button>
+          <input class="input_field vcc-listings" type="text" id="url" placeholder="Enter VCC Listing URL">
+          <button class="add-button vcc-listings" id="saveUrlButton">Save Listing</button>
         </div>
         <ul id="storedUrlsList"></ul>
       </div>
@@ -481,9 +507,9 @@
       </div>
       <div id="unity-versions" class="tab-content">
         <div class="input-group">
-          <input class="input_field" type="text" id="unityPath" placeholder="Enter Unity Path">
-          <input class="input_field" type="text" id="unityVersion" placeholder="Enter Unity Version">
-          <button id="addUnityVersionButton" class="add-button">Add Unity Version</button>
+          <input class="input_field unity-versions-left" type="text" id="unityPath" placeholder="Enter Unity Path">
+          <input class="input_field unity-versions-middle" type="text" id="unityVersion" placeholder="Enter Unity Version">
+          <button id="addUnityVersionButton" class="add-button unity-versions-right">Add Unity Version</button>
         </div>
         <ul id="storedUnityVersionsList"></ul>
       </div>

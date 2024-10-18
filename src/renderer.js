@@ -298,6 +298,10 @@ function unityVersionExists(version, unityVersions) {
 // Event listener for project dropdown change
 projectDropdown.addEventListener('change', async (event) => {
   await refreshProjectInfo();
+  // if selected project is empty call displayStoredUrls(urls, availableVCCPackages, 'none'); to clear the availableVCCPackages list
+  if (event.target.value === '') {
+    displayStoredUrls([], availableVCCPackages, 'none');
+  }
 });
 
 // Retrieve stored URLs and projects on load
