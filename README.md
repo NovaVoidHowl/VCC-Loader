@@ -139,6 +139,6 @@ Codebase Link: [https://vcc-loader.dev.novavoidhowl.uk](https://vcc-loader.dev.n
 [issues-shield]: https://img.shields.io/github/issues/NovaVoidHowl/VCC-Loader.svg?style=plastic
 [issues-url]: https://github.com/NovaVoidHowl/VCC-Loader/issues
 [license-shield]: https://img.shields.io/badge/License-LGPL_2.1-blue
-[license-url]: https://github.com/NovaVoidHowl/VCC-Loader/blob/master/LICENSE
+[license-url]: https://github.com/NovaVoidHowl/VCC-Loader/blob/main/LICENSE
 [stars-shield]: https://img.shields.io/github/stars/NovaVoidHowl/VCC-Loader.svg?style=plastic
 [stars-url]: https://github.com/NovaVoidHowl/VCC-Loader/stargazers
