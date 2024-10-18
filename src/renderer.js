@@ -556,7 +556,7 @@ async function addVccPackage(projectPath, packageName, version, url) {
 
   showNotificationBanner('Downloading package...', '#003366', 0);
 
-  // Download the package
+  // Download the package with progress tracking
   console.log(`Downloading package from: ${packageUrl}`);
   const response = await fetch(packageUrl);
   if (!response.ok) {
@@ -564,8 +564,28 @@ async function addVccPackage(projectPath, packageName, version, url) {
     throw new Error(`Failed to download package: ${response.statusText}`);
   }
 
-  // Get the response body as an ArrayBuffer
-  const arrayBuffer = await response.arrayBuffer();
+  const contentLength = response.headers.get('content-length');
+  if (!contentLength) {
+    showNotificationBanner('Failed to get content length', '#F44336', 3000);
+    throw new Error('Failed to get content length');
+  }
+
+  const totalBytes = parseInt(contentLength, 10);
+  let loadedBytes = 0;
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loadedBytes += value.length;
+    const percentage = ((loadedBytes / totalBytes) * 100).toFixed(2);
+    showNotificationBanner(`Downloading package... ${percentage}%`, '#003366', 0);
+  }
+
+  // Combine all chunks into a single buffer
+  const arrayBuffer = new Uint8Array(chunks.reduce((acc, chunk) => acc.concat(Array.from(chunk)), []));
   const buffer = Buffer.from(arrayBuffer);
 
   // Save the buffer to a file
