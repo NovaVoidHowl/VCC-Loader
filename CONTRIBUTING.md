@@ -20,7 +20,7 @@ The following are project standards and will not be changed,
 (this is for our own sanity, we don't want to be battling against a continual stream
 of X formatting standard is better type requests/comments)
 
-All indents (js, yaml etc.) are set to 2 spaces
+All indents (js, yaml etc.) are set to 2 spaces\
 All lines (for any file, excluding License files) must not exceed 120 characters in length
 
 ## Files that are not open to contributions
