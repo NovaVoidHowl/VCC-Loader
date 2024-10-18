@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const winVersionInfo = require('win-version-info');
 
 let mainWindow;
+let splashWindow;
 let deeplinkingUrl;
 
 // Initialize node-persist with a custom storage directory
@@ -323,12 +324,35 @@ if (!gotTheLock) {
   });
 }
 
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    alwaysOnTop: true,
+    transparent: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  splashWindow.loadFile('src/splash.html');
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+}
+
 function createWindow() {
+  createSplashWindow(); // Show the splash screen
+
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     backgroundColor: '#121212', // Set the background color to a dark color
     show: false, // Don't show the window until it's ready
+    autoHideMenuBar: true, // Automatically hide the menu bar
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,
@@ -336,9 +360,14 @@ function createWindow() {
     }
   });
 
+  mainWindow.setMenuBarVisibility(false); // Ensure the menu bar is hidden
+
   mainWindow.loadFile('src/index.html');
 
   mainWindow.once('ready-to-show', () => {
+    if (splashWindow) {
+      splashWindow.close(); // Close the splash screen
+    }
     mainWindow.show();
     if (deeplinkingUrl) {
       mainWindow.webContents.send('deeplinking-url', deeplinkingUrl);

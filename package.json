@@ -65,5 +65,5 @@
     "start": "electron .",
     "start-vcc-test": "electron . vcc://vpm/addRepo?url=https://Adjerry91.github.io/VRCFaceTracking-Templates/index2.json"
   },
-  "version": "0.23.2"
+  "version": "0.24.0"
 }
